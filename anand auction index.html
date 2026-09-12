@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anand Premier League 2026 — Live Auction</title>
+<style>
+  :root{
+    --navy:#1a2e5c; --navy-dark:#101d3d; --gold:#c9932c; --gold-light:#e8c574;
+    --cream:#f7f3e9; --green:#2e7d4f; --red:#b00020; --grey:#6b7280; --line:#e2e2e2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:Arial, Helvetica, sans-serif; background:var(--cream); color:#1c1c1c;
+  }
+  header{
+    background:linear-gradient(135deg,var(--navy),var(--navy-dark)); color:#fff;
+    padding:18px 24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  }
+  header h1{margin:0; font-size:1.35rem; letter-spacing:.5px;}
+  header .sub{font-size:.8rem; opacity:.8;}
+  nav{display:flex; gap:6px; padding:10px 16px; background:#fff; border-bottom:2px solid var(--gold); flex-wrap:wrap;}
+  nav button{
+    border:none; background:transparent; padding:9px 16px; font-size:.92rem; font-weight:bold;
+    color:var(--navy); cursor:pointer; border-radius:8px 8px 0 0;
+  }
+  nav button.active{background:var(--navy); color:#fff;}
+  main{padding:18px; max-width:1400px; margin:0 auto;}
+  .hidden{display:none !important;}
+  .card{background:#fff; border-radius:12px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); border:1px solid var(--line);}
+  .grid{display:grid; gap:14px;}
+  .grid.teams{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));}
+  .team-card{background:#fff; border-radius:14px; padding:16px; border:1px solid var(--line); box-shadow:0 1px 6px rgba(0,0,0,.07); position:relative; overflow:hidden;}
+  .team-card h3{margin:0 0 4px; color:var(--navy); font-size:1.15rem;}
+  .team-card .meta{font-size:.72rem; color:var(--grey); margin-bottom:10px; min-height:14px;}
+  .purse{font-size:1.5rem; font-weight:bold; color:var(--green);}
+  .purse.low{color:var(--red);}
+  .purse-label{font-size:.72rem; color:var(--grey); text-transform:uppercase; letter-spacing:.5px;}
+  .bar{height:8px; background:#eee; border-radius:4px; margin:8px 0 10px; overflow:hidden;}
+  .bar > div{height:100%; background:var(--gold); transition:width .3s;}
+  .cat-badges{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;}
+  .badge{font-size:.68rem; padding:2px 8px; border-radius:20px; background:var(--cream); border:1px solid var(--line); color:#444;}
+  .players-bought{font-size:.82rem; max-height:160px; overflow-y:auto;}
+  .players-bought div{padding:3px 0; border-bottom:1px dashed var(--line); display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
+  .players-bought .p-left{display:flex; align-items:baseline; gap:6px; min-width:0;}
+  .players-bought .p-cat{flex:0 0 auto; font-size:.66rem; font-weight:bold; color:var(--navy); background:var(--cream); border:1px solid var(--line); padding:1px 6px; border-radius:10px; white-space:nowrap;}
+  .players-bought .p-name{font-weight:bold; overflow-wrap:anywhere;}
+  .players-bought .p-price{color:var(--green); font-weight:bold; white-space:nowrap;}
+  .team-card-actions{display:flex; gap:6px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line);}
+  .team-card-actions button{flex:1; padding:7px 6px; font-size:.72rem; border-radius:7px;}
+  .team-card{cursor:pointer; transition:box-shadow .15s, transform .15s;}
+  .team-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.14);}
+  .team-card:active{transform:scale(.99);}
+  .print-only{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #printArea, #printArea *{visibility:visible;}
+    #printArea{display:block; position:absolute; top:0; left:0; width:100%; margin:0; padding:0;}
+    .print-card{page-break-after:always; padding:24px;}
+    .print-card:last-child{page-break-after:auto;}
+    .print-card h2{color:#1a2e5c; margin:0 0 2px;}
+    .print-card .print-meta{color:#6b7280; font-size:.85rem; margin-bottom:14px;}
+    .print-card table{width:100%; border-collapse:collapse; font-size:.95rem;}
+    .print-card th, .print-card td{padding:8px 10px; border-bottom:1px solid #e2e2e2; text-align:left;}
+    .print-card th{background:#1a2e5c; color:#fff;}
+    .print-card .print-summary{display:flex; gap:24px; margin-bottom:14px; font-size:.95rem;}
+  }
+  .now-bidding{
+    background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--navy-dark);
+    border-radius:14px; padding:22px; text-align:center; margin-bottom:18px; box-shadow:0 2px 10px rgba(0,0,0,.15);
+  }
+  .now-bidding .lbl{font-size:.85rem; letter-spacing:2px; font-weight:bold; opacity:.75;}
+  .now-bidding .nm{font-size:2.2rem; font-weight:bold; margin:4px 0;}
+  .now-bidding .ct{font-size:1rem; font-weight:bold;}
+  .row{display:flex; gap:14px; flex-wrap:wrap;}
+  .col{flex:1; min-width:260px;}
+  label{display:block; font-size:.78rem; font-weight:bold; color:var(--navy); margin:10px 0 4px;}
+  input[type=text], input[type=number], select{
+    width:100%; padding:9px 10px; border:1px solid #ccc; border-radius:8px; font-size:.95rem; font-family:inherit;
+  }
+  button.btn{
+    border:none; border-radius:8px; padding:11px 18px; font-weight:bold; cursor:pointer; font-size:.92rem;
+  }
+  .btn-primary{background:var(--navy); color:#fff;}
+  .btn-primary:hover{background:var(--navy-dark);}
+  .btn-success{background:var(--green); color:#fff;}
+  .btn-danger{background:var(--red); color:#fff;}
+  .btn-outline{background:#fff; border:1px solid var(--navy); color:var(--navy);}
+  .btn:disabled{opacity:.45; cursor:not-allowed;}
+  .search-box{position:relative;}
+  .search-results{
+    position:absolute; z-index:10; background:#fff; border:1px solid var(--line); border-radius:8px;
+    max-height:260px; overflow-y:auto; width:100%; box-shadow:0 4px 14px rgba(0,0,0,.15); margin-top:2px;
+  }
+  .search-results div{padding:8px 10px; cursor:pointer; font-size:.88rem; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between;}
+  .search-results div:hover{background:var(--cream);}
+  .search-results div.highlighted{background:var(--gold-light); color:var(--navy-dark);}
+  .search-results .cat-tag{font-size:.68rem; color:var(--grey);}
+  .selected-player{
+    background:var(--cream); border:1px dashed var(--gold); border-radius:10px; padding:12px; margin-top:8px;
+  }
+  .selected-player .nm{font-weight:bold; font-size:1.05rem; color:var(--navy);}
+  .selected-player .ct{font-size:.8rem; color:var(--grey);}
+  .warn{color:var(--red); font-size:.82rem; margin-top:6px; font-weight:bold;}
+  table{width:100%; border-collapse:collapse; font-size:.88rem;}
+  th, td{padding:8px 10px; border-bottom:1px solid var(--line); text-align:left;}
+  th{background:var(--navy); color:#fff; position:sticky; top:0;}
+  th.sortable-th{cursor:pointer; user-select:none; white-space:nowrap;}
+  th.sortable-th:hover{background:var(--navy-dark);}
+  .sort-arrow{display:inline-block; margin-left:4px; font-size:.75em; opacity:.85;}
+  tr:hover td{background:#fafafa;}
+  .status-sold{color:var(--red); font-weight:bold;}
+  .status-avail{color:var(--green); font-weight:bold;}
+  .table-wrap{max-height:520px; overflow-y:auto; border-radius:10px; border:1px solid var(--line);}
+  .filters{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center;}
+  .pill{padding:6px 14px; border-radius:20px; border:1px solid var(--line); background:#fff; cursor:pointer; font-size:.82rem; font-weight:bold; color:#444;}
+  .pill.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .log-item{display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--line); font-size:.85rem;}
+  .log-item .team{color:var(--navy); font-weight:bold;}
+  .footer-note{font-size:.75rem; color:var(--grey); text-align:center; margin-top:20px;}
+  .sync-dot{width:8px; height:8px; border-radius:50%; background:#4ade80; display:inline-block; margin-right:6px;}
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff;
+    padding:10px 20px; border-radius:8px; font-size:.85rem; box-shadow:0 4px 14px rgba(0,0,0,.25); z-index:50;
+    opacity:0; transition:opacity .25s;
+  }
+  .toast.show{opacity:1;}
+  @media (max-width:640px){
+    header{padding:14px 16px;} header h1{font-size:1.05rem;}
+    .now-bidding .nm{font-size:1.5rem;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🏏 ANAND PREMIER LEAGUE 2026</h1>
+    <div class="sub">Live Auction Control</div>
+  </div>
+  <div class="sub"><span class="sync-dot"></span><span id="syncLabel">ready</span></div>
+</header>
+
+<nav>
+  <button class="tab-btn active" data-tab="board">Live Board</button>
+  <button class="tab-btn" data-tab="auctioneer">Auctioneer</button>
+  <button class="tab-btn" data-tab="players">Player List</button>
+  <button class="tab-btn" data-tab="stats">Bid Stats</button>
+  <button class="tab-btn" data-tab="soldorder">Sold Order</button>
+  <button class="tab-btn" data-tab="setup">Setup</button>
+  <button class="tab-btn" data-tab="data">Import/Export</button>
+</nav>
+
+<main>
+
+  <!-- LIVE BOARD -->
+  <section id="tab-board">
+    <div id="nowBiddingBox"></div>
+    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+      <button class="btn btn-outline" id="printAllTeamsBtn">🖨 Print All Squads</button>
+    </div>
+    <div class="grid teams" id="teamGrid"></div>
+  </section>
+
+  <!-- AUCTIONEER -->
+  <section id="tab-auctioneer" class="hidden">
+    <div class="row">
+      <div class="col card">
+        <h3 style="margin-top:0;color:var(--navy)">1. Pick a Player</h3>
+        <div class="search-box">
+          <input type="text" id="playerSearch" placeholder="Type a player name to search available players...">
+          <div class="search-results hidden" id="searchResults"></div>
+        </div>
+        <div id="selectedPlayerBox"></div>
+        <button class="btn btn-outline" id="setLotBtn" style="margin-top:12px;" disabled>Show on Live Board (Now Bidding)</button>
+      </div>
+
+      <div class="col card">
+        <h3 style="margin-top:0;color:var(--navy)">2. Confirm Sale</h3>
+        <label>Sold to Team</label>
+        <select id="teamSelect"></select>
+        <label>Price (₹)</label>
+        <input type="number" id="priceInput" min="0" step="50" placeholder="e.g. 3000">
+        <div id="purseWarning"></div>
+        <div id="squadWarning"></div>
+        <button class="btn btn-success" id="confirmSaleBtn" style="margin-top:14px;width:100%;" disabled>✅ Confirm Sale</button>
+        <button class="btn btn-outline" id="clearLotBtn" style="margin-top:8px;width:100%;">Clear selection</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="margin:0;color:var(--navy)">Recent Sales</h3>
+        <div>
+          <button class="btn btn-outline" id="undoBtn">↩ Undo Last Sale</button>
+          <button class="btn btn-danger" id="resetBtn">Reset Entire Auction</button>
+        </div>
+      </div>
+      <div id="salesLog" style="margin-top:10px;"></div>
+    </div>
+  </section>
+
+  <!-- PLAYER LIST -->
+  <section id="tab-players" class="hidden">
+    <div class="card">
+      <div class="filters">
+        <input type="text" id="playerListSearch" placeholder="Search players..." style="max-width:260px;">
+        <div class="pill active" data-filter="All">All</div>
+        <div class="pill" data-filter="Available">Available</div>
+        <div class="pill" data-filter="Sold">Sold</div>
+        <div class="pill" data-filter="Bhagat">Bhagat</div>
+        <div class="pill" data-filter="Batsman">Batsman</div>
+        <div class="pill" data-filter="Bowler">Bowler</div>
+        <div class="pill" data-filter="All Rounder">All Rounder</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th class="sortable-th" data-key="name">Name<span class="sort-arrow" data-key="name"></span></th>
+            <th class="sortable-th" data-key="category">Category<span class="sort-arrow" data-key="category"></span></th>
+            <th class="sortable-th" data-key="status">Status<span class="sort-arrow" data-key="status"></span></th>
+            <th class="sortable-th" data-key="team">Team<span class="sort-arrow" data-key="team"></span></th>
+            <th class="sortable-th" data-key="price">Price<span class="sort-arrow" data-key="price"></span></th>
+          </tr></thead>
+          <tbody id="playerTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- BID STATS -->
+  <section id="tab-stats" class="hidden">
+    <div class="card">
+      <h3 style="margin-top:0;color:var(--navy)">Highest / Lowest Bid — Team Wise</h3>
+      <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">
+        Pre-decided players (assigned in Setup, not auctioned) are excluded from these bid stats.
+        Average = (Highest bid + Lowest bid) ÷ 2.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Team</th><th>Highest Bid</th><th>Player</th><th>Lowest Bid</th><th>Player</th><th>Average (H+L)/2</th>
+          </tr></thead>
+          <tbody id="statsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOLD ORDER -->
+  <section id="tab-soldorder" class="hidden">
+    <div class="card">
+      <h3 style="margin-top:0;color:var(--navy)">All Sold Players — Highest to Lowest</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Player</th><th>Category</th><th>Team</th><th>Price</th><th></th></tr></thead>
+          <tbody id="soldOrderTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="tab-setup" class="hidden">
+    <div class="card">
+      <h3 style="margin-top:0;color:var(--navy)">Team Names</h3>
+      <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">
+        Rename, add, or remove teams. Existing sold players, purses and mentor/captain info move with a renamed team automatically.
+        Removing a team with sold players deletes those sale records after confirmation.
+      </p>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));" id="teamNameGrid"></div>
+      <div style="margin-top:14px;">
+        <button class="btn btn-primary" id="saveTeamNamesBtn">Save Team Names</button>
+        <button class="btn btn-outline" id="addTeamBtn">+ Add Team</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3 style="margin-top:0;color:var(--navy)">Squad Limit</h3>
+      <label>Max players per team</label>
+      <input type="number" id="maxPlayersInput" min="1" style="max-width:200px;">
+      <button class="btn btn-primary" id="saveMaxPlayersBtn" style="margin-top:10px;">Save</button>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3 style="margin-top:0;color:var(--navy)">Pre-Decide Players</h3>
+      <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">
+        Assign players to a team directly, before the auction starts (e.g. 2 fixed players per team).
+        These count toward the squad limit and purse, but are excluded from Bid Stats since they weren't auctioned.
+      </p>
+      <div class="row">
+        <div class="col">
+          <label style="margin-top:0;">Player</label>
+          <div class="search-box">
+            <input type="text" id="preDecideSearch" placeholder="Type a player name...">
+            <div class="search-results hidden" id="preDecideResults"></div>
+          </div>
+          <div id="preDecideSelectedBox"></div>
+        </div>
+        <div class="col">
+          <label style="margin-top:0;">Team</label>
+          <select id="preDecideTeamSelect"></select>
+          <label>Role</label>
+          <select id="preDecideRoleSelect">
+            <option value="Captain">Captain</option>
+            <option value="Mentor">Mentor</option>
+          </select>
+          <label>Price (₹) — optional, 0 if a free pick</label>
+          <input type="number" id="preDecidePriceInput" min="0" step="50" value="0">
+          <button class="btn btn-primary" id="preDecideAssignBtn" style="margin-top:12px;width:100%;" disabled>Assign to Team</button>
+        </div>
+      </div>
+      <div id="preDecideList" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3 style="margin-top:0;color:var(--navy)">Team Mentor / Captain (optional)</h3>
+      <p style="font-size:.85rem;color:var(--grey);">These are just labels shown on the Live Board — they don't affect the auction logic.</p>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));" id="setupGrid"></div>
+      <button class="btn btn-primary" id="saveSetupBtn" style="margin-top:14px;">Save</button>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <h3 style="margin-top:0;color:var(--navy)">Purse per team</h3>
+      <input type="number" id="pursePerTeamInput" style="max-width:200px;">
+      <button class="btn btn-primary" id="savePurseBtn" style="margin-top:10px;">Save</button>
+    </div>
+  </section>
+
+  <!-- IMPORT / EXPORT -->
+  <section id="tab-data" class="hidden">
+    <div class="card">
+      <h3 style="margin-top:0;color:var(--navy)">Export to Excel</h3>
+      <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">
+        Downloads one workbook with sheets for Player List, Sold Order, Team Summary and Settings (purse, squad limit, team names).
+      </p>
+      <button class="btn btn-primary" id="exportExcelBtn">⬇ Export Full Auction (.xlsx)</button>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3 style="margin-top:0;color:var(--navy)">Import Player Master List</h3>
+      <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">
+        Excel file with columns <b>Name</b>, <b>Category</b>, and optionally <b>Mobile</b>, <b>Followup</b>.
+        Category should be one of: Bhagat, Batsman, Bowler, All Rounder.
+      </p>
+      <label style="margin-top:0;">Mode</label>
+      <select id="playerImportMode">
+        <option value="replace">Replace entire player list</option>
+        <option value="add">Add new players only (keep existing)</option>
+      </select>
+      <label>Excel file (.xlsx / .xls)</label>
+      <input type="file" id="playerImportFile" accept=".xlsx,.xls">
+      <div id="playerImportStatus" style="font-size:.82rem;color:var(--grey);margin-top:8px;"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3 style="margin-top:0;color:var(--navy)">Import / Update Sold Prices</h3>
+      <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">
+        Excel file with columns <b>Player</b>, <b>Team</b>, <b>Price</b> (matches the "Sold Order" export sheet).
+        For each row: if the player is already sold, updates their team/price; if not yet sold, marks them sold to that team at that price.
+        Players not in the file are left untouched.
+      </p>
+      <label>Excel file (.xlsx / .xls)</label>
+      <input type="file" id="soldImportFile" accept=".xlsx,.xls">
+      <div id="soldImportStatus" style="font-size:.82rem;color:var(--grey);margin-top:8px;"></div>
+    </div>
+  </section>
+
+  <div class="footer-note">Anand Premier League 2026 · Saved automatically in this browser · Open a second window of this same file on this computer (e.g. dragged to the projector display) to see it update live</div>
+</main>
+
+<div class="toast" id="toast"></div>
+<div id="printArea" class="print-only"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+const DEFAULT_MASTER_PLAYERS = [{"name": "Abhay Ramesh Kotadiya", "category": "All Rounder", "mobile": "8928478896", "followup": "Yash Jayanti Kaila"}, {"name": "Aditya Piyush Shrotriya", "category": "All Rounder", "mobile": "8879823171", "followup": "Vinit Sanjay Hindocha"}, {"name": "Ajay Pravin Savaliya", "category": "All Rounder", "mobile": "8898424976", "followup": "Dhaval Dhiru Chhaya"}, {"name": "Akash Shekhar Humarmalekar", "category": "All Rounder", "mobile": "8828345989", "followup": "Vinit Sanjay Hindocha"}, {"name": "Akash Rajesh Kajale", "category": "All Rounder", "mobile": "9594674513", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Akshar Virendra Thoria", "category": "All Rounder", "mobile": "9321655236", "followup": "Yash Jayanti Kaila"}, {"name": "Akshay Kiran Varma", "category": "All Rounder", "mobile": "8767952100", "followup": "Dhaval Dhiru Chhaya"}, {"name": "Anand Bhagwan Mukhiya", "category": "All Rounder", "mobile": "9867382698", "followup": "Aditya Piyush Shrotriya"}, {"name": "Ankit Shyam Chaturvedi", "category": "All Rounder", "mobile": "8976458774", "followup": "Yash Jayanti Kaila"}, {"name": "Avinash Vinayak Kadam", "category": "Bhagat", "mobile": "8268915948", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Babu Gogan Shingala", "category": "Bhagat", "mobile": "9833722626", "followup": "Suvas Pravin Waghela"}, {"name": "Bhargav Babu Shingala", "category": "Bhagat", "mobile": "9324822270", "followup": "Yash Jayanti Kaila"}, {"name": "Bhavesh Mansukhlal Rathod", "category": "Bhagat", "mobile": "9769113490", "followup": "Vinit Sanjay Hindocha"}, {"name": "Bhavesh  Savjibhai  Maru", "category": "Bhagat", "mobile": "9820104285", "followup": "Suvas Pravin Waghela"}, {"name": "Bhavesh Dhanji Makwana", "category": "Bhagat", "mobile": "9326669364", "followup": "Suvas Pravin Waghela"}, {"name": "Bhavyam Jaysukh Bhalala", "category": "Bhagat", "mobile": "8928437150", "followup": "Vinit Sanjay Hindocha"}, {"name": "Bhupat chhana Pagdar", "category": "Bhagat", "mobile": "8369621161", "followup": "Pawan Hasmukh Rathod"}, {"name": "Brijesh Rajesh Mavani", "category": "Bhagat", "mobile": "8657671173", "followup": "Aditya Piyush Shrotriya"}, {"name": "Daksh Pragnesh Parmar", "category": "Bhagat", "mobile": "9082151086", "followup": "Yash Jayanti Kaila"}, {"name": "Darshan Pankaj Patel", "category": "Bhagat", "mobile": "9653211771", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Darshan Mahesh Valand", "category": "Bhagat", "mobile": "9967348562", "followup": "Bhavyam Jaysukh Bhalala"}, {"name": "Darshil Rajendra Shukla", "category": "Bhagat", "mobile": "7303094822", "followup": "Yash Jayanti Kaila"}, {"name": "Dev Hamir Bharwad", "category": "Bhagat", "mobile": "9653661606", "followup": "Yash Jayanti Kaila"}, {"name": "Dhaval Dhiru Chhaya", "category": "Bhagat", "mobile": "9321166733", "followup": "Vinit Sanjay Hindocha"}, {"name": "Dhiraj Chandrabhan Gupta", "category": "Bhagat", "mobile": "9372227998", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Dhiraj Damodar Suthar", "category": "Bhagat", "mobile": "7506050012", "followup": "Dhaval Dhiru Chhaya"}, {"name": "Dhiraj Suresh Chekhaliya", "category": "Bhagat", "mobile": "9137405663", "followup": "Suresh Damodar Suthar"}, {"name": "Divyesh Haresh Meva", "category": "Bhagat", "mobile": "8446658986", "followup": "Vinit Sanjay Hindocha"}, {"name": "Harin  Acharya", "category": "Bhagat", "mobile": "9699714521", "followup": "Dhaval Dhiru Chhaya"}, {"name": "Harsh Bharat Somaiya", "category": "Bhagat", "mobile": "9326640162", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Harsh Ashok Mewada", "category": "Bhagat", "mobile": "8097341686", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Harsh Nitin Parmar", "category": "Bhagat", "mobile": "9372876704", "followup": "Yash Jayanti Kaila"}, {"name": "Harsh Ramesh Barvaliya", "category": "Bhagat", "mobile": "7977090024", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Harshit Gautam santoki", "category": "Bhagat", "mobile": "9323579679", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Harshit Pritesh Pandya", "category": "Bhagat", "mobile": "9833734826", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Heramb Sharad Kadam", "category": "Bhagat", "mobile": "9326357871", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Het Kalpesh Raja", "category": "Bhagat", "mobile": "9324856861", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Hitesh Dhanji Bhalala", "category": "Bhagat", "mobile": "9820006620", "followup": "Pawan Hasmukh Rathod"}, {"name": "Jash Kiran Oza", "category": "Bhagat", "mobile": "9867577371", "followup": "Aditya Piyush Shrotriya"}, {"name": "Jasmin Ramesh Kotadiya", "category": "Bhagat", "mobile": "8286914254", "followup": "Divyesh Haresh Meva"}, {"name": "Jay Harsh Zalavadia", "category": "Bhagat", "mobile": "9004953770", "followup": "Aditya Piyush Shrotriya"}, {"name": "Jay Sailesh Kawa", "category": "Bhagat", "mobile": "8591880032", "followup": "Yash Jayanti Kaila"}, {"name": "Jay Shailesh Virani", "category": "Bhagat", "mobile": "9313712493", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Jayanti Parshottam Vaishnav", "category": "Bhagat", "mobile": "9619720561", "followup": "Pawan Hasmukh Rathod"}, {"name": "Jimesh Bhanu Chhunchha", "category": "Bhagat", "mobile": "9326747197", "followup": "Divyesh Haresh Meva"}, {"name": "Karan Tushar Shah", "category": "Bhagat", "mobile": "9920789985", "followup": "Aditya Piyush Shrotriya"}, {"name": "Kaushik Jaswant Darji", "category": "Bhagat", "mobile": "9892784111", "followup": "Suvas Pravin Waghela"}, {"name": "Kishan Vinod Suralia", "category": "Bhagat", "mobile": "9892054568", "followup": "Dhaval Dhiru Chhaya"}, {"name": "Krishna Kamlesh Darji", "category": "Bhagat", "mobile": "9326612603", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Kush Pinakin Chauhan", "category": "Bhagat", "mobile": "9167605418", "followup": "Bhavyam Jaysukh Bhalala"}, {"name": "Lokesh Shrikant Rathod", "category": "Bhagat", "mobile": "8356032401", "followup": "Suresh Damodar Suthar"}, {"name": "Mahesh Vaman Makwana", "category": "Bhagat", "mobile": "9833405775", "followup": "Suvas Pravin Waghela"}, {"name": "Mahesh Jagan Kolhekar", "category": "Bhagat", "mobile": "8097143595", "followup": "Aditya Piyush Shrotriya"}, {"name": "Mahesh Rameh Rakholiya", "category": "Bhagat", "mobile": "9970420574", "followup": "Dhaval Dhiru Chhaya"}, {"name": "Mahesh Amrut Valand", "category": "Bhagat", "mobile": "9323448143", "followup": "Pawan Hasmukh Rathod"}, {"name": "Manan Kiran Varma", "category": "Bhagat", "mobile": "7718935417", "followup": "Yash Jayanti Kaila"}, {"name": "Manan Ramji Rangani", "category": "Bhagat", "mobile": "9119568990", "followup": "Aditya Piyush Shrotriya"}, {"name": "Manan Sumit More", "category": "Bhagat", "mobile": "7777019141", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Manish Hasmukh Rathod", "category": "Batsman", "mobile": "9920347766", "followup": "Suvas Pravin Waghela"}, {"name": "Mansukh Vallabh Ragani", "category": "Batsman", "mobile": "9969671953", "followup": "Pawan Hasmukh Rathod"}, {"name": "Mayank Narsi Virani", "category": "Batsman", "mobile": "8169136876", "followup": "Yash Jayanti Kaila"}, {"name": "Mayur Ramesh Makwana", "category": "Batsman", "mobile": "9821646214", "followup": "Suvas Pravin Waghela"}, {"name": "Meet Nilesh Bataviya", "category": "Batsman", "mobile": "8591110566", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Mukesh Magan Vekariya", "category": "Batsman", "mobile": "9768607127", "followup": "Pawan Hasmukh Rathod"}, {"name": "Nageshwar Shankar Nakarakanti", "category": "Batsman", "mobile": "7715815556", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Neev Umesh Bhalala", "category": "Batsman", "mobile": "9082020439", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Nimesh Navinchandra Tailor", "category": "Batsman", "mobile": "8976229951", "followup": "Suvas Pravin Waghela"}, {"name": "Niral Dinesh Darji", "category": "Batsman", "mobile": "9833743465", "followup": "Suvas Pravin Waghela"}, {"name": "Nirmit Manish Gadiya", "category": "Batsman", "mobile": "8169880064", "followup": "Yash Jayanti Kaila"}, {"name": "Pawan Hasmukh Rathod", "category": "Batsman", "mobile": "9920347755", "followup": "Vinit Sanjay Hindocha"}, {"name": "Piyush Kalu Gajera", "category": "Batsman", "mobile": "9372091348", "followup": "Divyesh Haresh Meva"}, {"name": "Pratham Hitesh Bhatt", "category": "Batsman", "mobile": "9320264456", "followup": "Suresh Damodar Suthar"}, {"name": "Prem Harish Acharya", "category": "Batsman", "mobile": "8369772080", "followup": "Aditya Piyush Shrotriya"}, {"name": "Priyang Amar Trivedi", "category": "Batsman", "mobile": "7016988667", "followup": "Suresh Damodar Suthar"}, {"name": "Rahul Vitthal Savalia", "category": "Batsman", "mobile": "9821914376", "followup": "Dhaval Dhiru Chhaya"}, {"name": "Raj Nilish Sarsavadiya", "category": "Batsman", "mobile": "8369025261", "followup": "Dhaval Dhiru Chhaya"}, {"name": "Rajat Adalat Yadav", "category": "Batsman", "mobile": "9833307698", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Rajesh Mohan Bariya", "category": "Batsman", "mobile": "8879682918", "followup": "Dhaval Dhiru Chhaya"}, {"name": "Raju Ashok Joshi", "category": "Batsman", "mobile": "9819263673", "followup": "Vinit Sanjay Hindocha"}, {"name": "Rakesh Ashok Katrimani", "category": "Batsman", "mobile": "8291082124", "followup": "Aditya Piyush Shrotriya"}, {"name": "Ratilal Hirji Mistry", "category": "Batsman", "mobile": "9819909965", "followup": "Pawan Hasmukh Rathod"}, {"name": "Ritesh Suresh Chekhaliya", "category": "Bowler", "mobile": "9558258827", "followup": "Suresh Damodar Suthar"}, {"name": "Rohit Gajraj Rao", "category": "Bowler", "mobile": "7977112882", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Ronak Kanti Solanki", "category": "Bowler", "mobile": "8104976678", "followup": "Suresh Damodar Suthar"}, {"name": "Rudra Sanjay Bhanushali", "category": "Bowler", "mobile": "8369580979", "followup": "Suresh Damodar Suthar"}, {"name": "Rudra Manish Rathod", "category": "Bowler", "mobile": "7025124800", "followup": "Bhavyam Jaysukh Bhalala"}, {"name": "Sagar Jagu Parmar", "category": "Bowler", "mobile": "8268279680", "followup": "Bhavyam Jaysukh Bhalala"}, {"name": "Samir Dhiraj Patel", "category": "Bowler", "mobile": "9867318909", "followup": "Pawan Hasmukh Rathod"}, {"name": "Santosh Bharat Chekhaliya", "category": "Bowler", "mobile": "9321554091", "followup": "Dhaval Dhiru Chhaya"}, {"name": "Shaunak sharad kadam", "category": "Bowler", "mobile": "9867396579", "followup": "Yash Jayanti Kaila"}, {"name": "Shubh Dilip Bhatt", "category": "Bowler", "mobile": "7021056705", "followup": "Suresh Damodar Suthar"}, {"name": "Shubham Prasad Shetty", "category": "Bowler", "mobile": "9833729129", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Sid Bhupendra Audichya", "category": "Bowler", "mobile": "9324649671", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Siddharth Karsan Radadiya", "category": "Bowler", "mobile": "9653309863", "followup": "Divyesh Haresh Meva"}, {"name": "Siddharth Anant Lonkar", "category": "Bowler", "mobile": "8169062573", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Soham Jimesh Chhunchha", "category": "Bowler", "mobile": "8655318387", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Somya Bhupendra Audichya", "category": "Bowler", "mobile": "9136940773", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Sunjay Arjun Ladva", "category": "Bowler", "mobile": "9930372149", "followup": "Suvas Pravin Waghela"}, {"name": "Suresh Damodar Suthar", "category": "Bowler", "mobile": "9326206944", "followup": "Vinit Sanjay Hindocha"}, {"name": "Suvas Pravin Waghela", "category": "Bowler", "mobile": "9869123499", "followup": "Vinit Sanjay Hindocha"}, {"name": "Tanish Umesh Bhalala", "category": "Bowler", "mobile": "9321372159", "followup": "Suresh Damodar Suthar"}, {"name": "Tirth Kiran Parmar", "category": "Bowler", "mobile": "9082080571", "followup": "Aditya Piyush Shrotriya"}, {"name": "Tushar Manoj Gupta", "category": "Bowler", "mobile": "8850781764", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Tushar Suresh Solanki", "category": "Bowler", "mobile": "8591250611", "followup": "Suresh Damodar Suthar"}, {"name": "Tushar Amrutbhai Ratda", "category": "Bowler", "mobile": "9326157626", "followup": "Suresh Damodar Suthar"}, {"name": "Umesh Dhanji Bhalala", "category": "Bowler", "mobile": "9920049046", "followup": "Pawan Hasmukh Rathod"}, {"name": "Vedant Devang Mehta", "category": "Bowler", "mobile": "7738699819", "followup": "Yash Jayanti Kaila"}, {"name": "Veeresh Gaurappa Lingayat", "category": "Bowler", "mobile": "9819616877", "followup": "Aditya Piyush Shrotriya"}, {"name": "Vinit Sanjay Hindocha", "category": "Bowler", "mobile": "9820198422", "followup": "Vinit Sanjay Hindocha"}, {"name": "Viral Mahesh Makwana", "category": "Bowler", "mobile": "9137049891", "followup": "Aditya Piyush Shrotriya"}, {"name": "Viren Ajit Delkar", "category": "Bowler", "mobile": "7021897552", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Vivek Manoj Gupta", "category": "Bowler", "mobile": "7977461849", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Yash Hari Soni", "category": "Bowler", "mobile": "9653149347", "followup": "Dhaval Dhiru Chhaya"}, {"name": "Yash Jayanti Kaila", "category": "Bowler", "mobile": "9867778997", "followup": "Vinit Sanjay Hindocha"}, {"name": "Yash Mitesh Bhatda", "category": "Bowler", "mobile": "8591847916", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Yogesh Rajesh Kajale", "category": "Bowler", "mobile": "8928280032", "followup": "Akash Shekhar Humarmalekar"}, {"name": "Yug Prasad Shetty", "category": "Bowler", "mobile": "9136567791", "followup": "Akash Shekhar Humarmalekar"}];
+const DEFAULT_TEAM_NAMES = ["Team 1", "Team 2", "Team 3", "Team 4", "Team 5", "Team 6", "Team 7", "Team 8", "Team 9", "Team 10", "Indigenous Yogi"];
+const DEFAULT_PURSE = 25000;
+const DEFAULT_MAX_PLAYERS = 6;
+
+let MASTER_PLAYERS = DEFAULT_MASTER_PLAYERS.slice(); // mutable — editable via Excel import
+let TEAM_NAMES = DEFAULT_TEAM_NAMES.slice();         // mutable — editable team names
+let soldPlayers = [];   // [{name, category, team, price, ts, preDecided}]
+let currentLot = null;  // {name, category} | null
+let teamMeta = {};      // {teamName: {mentor, captain}}
+let pursePerTeam = DEFAULT_PURSE;
+let maxPlayersPerTeam = DEFAULT_MAX_PLAYERS;
+let selectedPlayerForSale = null;
+let selectedPlayerForPreDecide = null;
+let playerListFilter = 'All';
+let playerListSort = { key: 'name', dir: 1 }; // dir: 1 = ascending, -1 = descending
+
+// ---------- Storage helpers ----------
+// Plain browser localStorage: works offline, in any browser, on the machine
+// running this file. Persists across refreshes and syncs instantly between
+// multiple windows/tabs of this same file on the same computer (e.g. one
+// window on the laptop screen, one dragged onto the projector's display).
+const STORAGE_KEY = 'apl_auction_state_v1';
+let saveTimer = null;
+
+function readStorage(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    console.error('Could not read saved auction state:', e);
+    return null;
+  }
+}
+
+function writeStorage(){
+  try{
+    const payload = { soldPlayers, currentLot, teamMeta, pursePerTeam, maxPlayersPerTeam, TEAM_NAMES, MASTER_PLAYERS };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    setSyncLabel('saved ' + new Date().toLocaleTimeString());
+    return true;
+  }catch(e){
+    console.error('Could not save auction state:', e);
+    setSyncLabel('⚠ save failed — see console');
+    alert('Could not save your changes. Your browser storage may be full or blocked (private/incognito mode can block this). Please check and try again.');
+    return false;
+  }
+}
+
+function setSyncLabel(text){
+  const el = document.getElementById('syncLabel');
+  if(el) el.textContent = text;
+}
+
+function loadState(){
+  const data = readStorage();
+  if(data){
+    soldPlayers = data.soldPlayers || [];
+    currentLot = data.currentLot || null;
+    teamMeta = data.teamMeta || {};
+    pursePerTeam = data.pursePerTeam || DEFAULT_PURSE;
+    maxPlayersPerTeam = data.maxPlayersPerTeam || DEFAULT_MAX_PLAYERS;
+    TEAM_NAMES = (data.TEAM_NAMES && data.TEAM_NAMES.length) ? data.TEAM_NAMES : DEFAULT_TEAM_NAMES.slice();
+    MASTER_PLAYERS = (data.MASTER_PLAYERS && data.MASTER_PLAYERS.length) ? data.MASTER_PLAYERS : DEFAULT_MASTER_PLAYERS.slice();
+  }
+  renderAll();
+}
+
+// Every mutation goes through this: update in-memory state, persist, re-render.
+function persistAndRender(){
+  const ok = writeStorage();
+  renderAll();
+  return ok;
+}
+
+// Other tabs/windows of this same file (same browser, same computer) get a
+// native 'storage' event the instant localStorage changes here — no polling,
+// no delay.
+window.addEventListener('storage', (e) => {
+  if(e.key === STORAGE_KEY){
+    loadState();
+    setSyncLabel('synced from another window');
+  }
+});
+
+// ---------- Derived data ----------
+function soldMap(){
+  const m = {};
+  soldPlayers.forEach(s => m[s.name] = s);
+  return m;
+}
+function availablePlayers(){
+  const sm = soldMap();
+  return MASTER_PLAYERS.filter(p => !sm[p.name]);
+}
+function teamSummary(team){
+  const rows = soldPlayers.filter(s => s.team === team);
+  const spent = rows.reduce((a,b) => a + Number(b.price||0), 0);
+  const cats = {'Bhagat':0,'Batsman':0,'Bowler':0,'All Rounder':0};
+  rows.forEach(r => { if(cats[r.category] !== undefined) cats[r.category]++; });
+  const count = rows.length;
+  const full = count >= maxPlayersPerTeam;
+  return { rows, spent, left: pursePerTeam - spent, cats, count, slotsLeft: Math.max(0, maxPlayersPerTeam - count), full };
+}
+
+// Bid stats exclude pre-decided (non-auctioned) picks
+function bidStats(team){
+  const rows = soldPlayers.filter(s => s.team === team && !s.preDecided);
+  if(rows.length === 0) return null;
+  let highest = rows[0], lowest = rows[0];
+  rows.forEach(r => {
+    if(Number(r.price) > Number(highest.price)) highest = r;
+    if(Number(r.price) < Number(lowest.price)) lowest = r;
+  });
+  const avg = (Number(highest.price) + Number(lowest.price)) / 2;
+  return { highest, lowest, avg };
+}
+
+// ---------- Rendering ----------
+function renderAll(){
+  renderNowBidding();
+  renderBoard();
+  renderTeamSelect();
+  renderPreDecideTeamSelect();
+  renderSalesLog();
+  renderPlayerTable();
+  renderStats();
+  renderSoldOrder();
+  renderSetup();
+  renderTeamNameGrid();
+  renderPreDecideList();
+  updateSaleButtons();
+  updatePreDecideButton();
+}
+
+function renderNowBidding(){
+  const box = document.getElementById('nowBiddingBox');
+  if(!currentLot){ box.innerHTML = ''; return; }
+  box.innerHTML = `
+    <div class="now-bidding">
+      <div class="lbl">NOW BIDDING</div>
+      <div class="nm">${escapeHtml(currentLot.name)}</div>
+      <div class="ct">${escapeHtml(currentLot.category)}</div>
+    </div>`;
+}
+
+function renderBoard(){
+  const grid = document.getElementById('teamGrid');
+  grid.innerHTML = TEAM_NAMES.map(team => {
+    const s = teamSummary(team);
+    const pct = Math.max(0, Math.min(100, (s.spent / pursePerTeam) * 100));
+    const meta = teamMeta[team] || {};
+    const metaLine = [meta.mentor, meta.captain].filter(Boolean).join(' · ');
+    const low = s.left < 0;
+    const playersHtml = s.rows.length
+      ? s.rows.map(r => `<div><span class="p-left"><span class="p-cat">${escapeHtml(catAbbr(r.category))}</span><span class="p-name">${escapeHtml(r.name)}${r.preDecided ? ` <span style="color:var(--grey);font-weight:normal;">(${escapeHtml(r.role || 'Pre-decided')})</span>` : ''}</span></span><span class="p-price">₹${Number(r.price).toLocaleString('en-IN')}</span></div>`).join('')
+      : `<div style="color:#aaa;">No players yet</div>`;
+    return `
+      <div class="team-card" data-team="${escapeHtml(team)}">
+        <h3>${escapeHtml(team)}</h3>
+        <div class="meta">${escapeHtml(metaLine || ' ')}</div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+          <div>
+            <div class="purse-label">Purse Left</div>
+            <div class="purse ${low?'low':''}">₹${s.left.toLocaleString('en-IN')}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="purse-label">Squad</div>
+            <div style="font-weight:bold; font-size:1.1rem; color:${s.full?'var(--red)':'var(--navy)'};">${s.count} / ${maxPlayersPerTeam}${s.full ? ' FULL' : ''}</div>
+          </div>
+        </div>
+        <div class="bar"><div style="width:${pct}%; background:${low?'var(--red)':'var(--gold)'};"></div></div>
+        <div class="cat-badges">
+          <span class="badge">Bhagat: ${s.cats['Bhagat']}</span>
+          <span class="badge">Bat: ${s.cats['Batsman']}</span>
+          <span class="badge">Bowl: ${s.cats['Bowler']}</span>
+          <span class="badge">AR: ${s.cats['All Rounder']}</span>
+        </div>
+        <div class="players-bought">${playersHtml}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderTeamSelect(){
+  const sel = document.getElementById('teamSelect');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">-- choose team --</option>' + TEAM_NAMES.map(t => {
+    const s = teamSummary(t);
+    const label = `${t} (₹${s.left.toLocaleString('en-IN')} left · ${s.count}/${maxPlayersPerTeam}${s.full ? ' FULL':''})`;
+    return `<option value="${escapeHtml(t)}" ${s.full ? 'disabled' : ''}>${escapeHtml(label)}</option>`;
+  }).join('');
+  if(current) sel.value = current;
+}
+
+function renderPreDecideTeamSelect(){
+  const sel = document.getElementById('preDecideTeamSelect');
+  if(!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">-- choose team --</option>' + TEAM_NAMES.map(t => {
+    const s = teamSummary(t);
+    const label = `${t} (${s.count}/${maxPlayersPerTeam}${s.full ? ' FULL':''})`;
+    return `<option value="${escapeHtml(t)}" ${s.full ? 'disabled' : ''}>${escapeHtml(label)}</option>`;
+  }).join('');
+  if(current) sel.value = current;
+}
+
+function renderSalesLog(){
+  const el = document.getElementById('salesLog');
+  if(soldPlayers.length === 0){ el.innerHTML = '<div style="color:#aaa;font-size:.85rem;">No sales yet.</div>'; return; }
+  const recent = [...soldPlayers].slice(-10).reverse();
+  el.innerHTML = recent.map(r => `
+    <div class="log-item">
+      <span>${escapeHtml(r.name)} <span style="color:var(--grey);">(${escapeHtml(r.category)})</span></span>
+      <span class="team">${escapeHtml(r.team)}</span>
+      <span style="color:var(--green);font-weight:bold;">₹${Number(r.price).toLocaleString('en-IN')}</span>
+    </div>`).join('');
+}
+
+function renderPlayerTable(){
+  const sm = soldMap();
+  const searchVal = (document.getElementById('playerListSearch').value || '').toLowerCase();
+  let rows = MASTER_PLAYERS.filter(p => p.name.toLowerCase().includes(searchVal));
+  if(playerListFilter === 'Available') rows = rows.filter(p => !sm[p.name]);
+  else if(playerListFilter === 'Sold') rows = rows.filter(p => sm[p.name]);
+  else if(['Bhagat','Batsman','Bowler','All Rounder'].includes(playerListFilter)) rows = rows.filter(p => p.category === playerListFilter);
+
+  const { key, dir } = playerListSort;
+  const sortVal = (p) => {
+    const s = sm[p.name];
+    switch(key){
+      case 'category': return p.category.toLowerCase();
+      case 'status': return s ? 'sold' : 'available';
+      case 'team': return s ? s.team.toLowerCase() : '';
+      case 'price': return s ? Number(s.price) : -1;
+      default: return p.name.toLowerCase();
+    }
+  };
+  rows = rows.slice().sort((a, b) => {
+    const av = sortVal(a), bv = sortVal(b);
+    if(av < bv) return -1 * dir;
+    if(av > bv) return 1 * dir;
+    return a.name.localeCompare(b.name);
+  });
+
+  document.querySelectorAll('.sort-arrow').forEach(el => {
+    el.textContent = el.dataset.key === key ? (dir === 1 ? '▲' : '▼') : '';
+  });
+
+  const tbody = document.getElementById('playerTableBody');
+  tbody.innerHTML = rows.map(p => {
+    const s = sm[p.name];
+    return `<tr>
+      <td>${escapeHtml(p.name)}</td>
+      <td>${escapeHtml(p.category)}</td>
+      <td class="${s?'status-sold':'status-avail'}">${s?'Sold':'Available'}</td>
+      <td>${s ? escapeHtml(s.team) : '-'}</td>
+      <td>${s ? '₹'+Number(s.price).toLocaleString('en-IN') : '-'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderStats(){
+  const tbody = document.getElementById('statsTableBody');
+  if(!tbody) return;
+  tbody.innerHTML = TEAM_NAMES.map(t => {
+    const b = bidStats(t);
+    if(!b){
+      return `<tr><td>${escapeHtml(t)}</td><td colspan="5" style="color:#aaa;">No auctioned players yet</td></tr>`;
+    }
+    return `<tr>
+      <td>${escapeHtml(t)}</td>
+      <td style="color:var(--green);font-weight:bold;">₹${Number(b.highest.price).toLocaleString('en-IN')}</td>
+      <td>${escapeHtml(b.highest.name)}</td>
+      <td style="color:var(--red);font-weight:bold;">₹${Number(b.lowest.price).toLocaleString('en-IN')}</td>
+      <td>${escapeHtml(b.lowest.name)}</td>
+      <td style="font-weight:bold;">₹${b.avg.toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderSoldOrder(){
+  const tbody = document.getElementById('soldOrderTableBody');
+  if(!tbody) return;
+  const rows = [...soldPlayers].sort((a,b) => Number(b.price) - Number(a.price));
+  if(rows.length === 0){
+    tbody.innerHTML = '<tr><td colspan="6" style="color:#aaa;">No sales yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map((r, i) => {
+    const realIdx = soldPlayers.indexOf(r);
+    return `
+    <tr>
+      <td>${i+1}</td>
+      <td>${escapeHtml(r.name)}${r.preDecided ? ` <span style="color:var(--grey);font-size:.75rem;">(${escapeHtml(r.role || 'Pre-decided')})</span>` : ''}</td>
+      <td>${escapeHtml(r.category)}</td>
+      <td>${escapeHtml(r.team)}</td>
+      <td style="font-weight:bold; color:var(--green);">₹${Number(r.price).toLocaleString('en-IN')}</td>
+      <td><button class="btn btn-outline edit-sold-price" data-idx="${realIdx}" style="padding:4px 10px;font-size:.75rem;">Edit</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderSetup(){
+  const grid = document.getElementById('setupGrid');
+  grid.innerHTML = TEAM_NAMES.map(t => {
+    const m = teamMeta[t] || {};
+    return `
+      <div class="card" style="padding:12px;">
+        <div style="font-weight:bold;color:var(--navy);margin-bottom:8px;">${escapeHtml(t)}</div>
+        <label style="margin-top:0;">Mentor</label>
+        <input type="text" data-team="${escapeHtml(t)}" data-field="mentor" class="setup-input" value="${escapeHtml(m.mentor||'')}">
+        <label>Captain</label>
+        <input type="text" data-team="${escapeHtml(t)}" data-field="captain" class="setup-input" value="${escapeHtml(m.captain||'')}">
+      </div>`;
+  }).join('');
+  document.getElementById('pursePerTeamInput').value = pursePerTeam;
+  document.getElementById('maxPlayersInput').value = maxPlayersPerTeam;
+}
+
+function renderTeamNameGrid(){
+  const grid = document.getElementById('teamNameGrid');
+  if(!grid) return;
+  const onlyOneLeft = TEAM_NAMES.length <= 1;
+  grid.innerHTML = TEAM_NAMES.map((t, i) => `
+    <div>
+      <label style="margin-top:0;">Team ${i+1}</label>
+      <div style="display:flex; gap:6px;">
+        <input type="text" class="team-name-input" data-idx="${i}" value="${escapeHtml(t)}" style="flex:1;">
+        <button class="btn btn-danger remove-team-btn" data-idx="${i}" title="Remove team" ${onlyOneLeft ? 'disabled' : ''} style="padding:9px 12px;">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderPreDecideList(){
+  const el = document.getElementById('preDecideList');
+  if(!el) return;
+  const rows = soldPlayers.map((r, idx) => ({...r, idx})).filter(r => r.preDecided);
+  if(rows.length === 0){
+    el.innerHTML = '<div style="color:#aaa;font-size:.85rem;">No pre-decided players yet.</div>';
+    return;
+  }
+  el.innerHTML = `<table><thead><tr><th>Team</th><th>Role</th><th>Player</th><th>Category</th><th>Price</th><th></th></tr></thead><tbody>` +
+    rows.map(r => `
+      <tr>
+        <td>${escapeHtml(r.team)}</td>
+        <td>${escapeHtml(r.role || '-')}</td>
+        <td>${escapeHtml(r.name)}</td>
+        <td>${escapeHtml(r.category)}</td>
+        <td>₹${Number(r.price).toLocaleString('en-IN')}</td>
+        <td><button class="btn btn-outline remove-predecide" data-idx="${r.idx}" style="padding:4px 10px;font-size:.75rem;">Remove</button></td>
+      </tr>`).join('') +
+    `</tbody></table>`;
+}
+
+function updateSaleButtons(){
+  const setLotBtn = document.getElementById('setLotBtn');
+  const confirmBtn = document.getElementById('confirmSaleBtn');
+  setLotBtn.disabled = !selectedPlayerForSale;
+  const teamVal = document.getElementById('teamSelect').value;
+  const priceVal = document.getElementById('priceInput').value;
+
+  const warnBox = document.getElementById('purseWarning');
+  const squadBox = document.getElementById('squadWarning');
+  let blocked = false;
+
+  if(teamVal){
+    const s = teamSummary(teamVal);
+    if(s.full){
+      squadBox.innerHTML = `<div class="warn">⚠ ${escapeHtml(teamVal)} already has ${maxPlayersPerTeam} players — squad is full.</div>`;
+      blocked = true;
+    } else { squadBox.innerHTML = ''; }
+  } else { squadBox.innerHTML = ''; }
+
+  if(teamVal && priceVal){
+    const s = teamSummary(teamVal);
+    if(Number(priceVal) > s.left){
+      warnBox.innerHTML = `<div class="warn">⚠ This exceeds ${escapeHtml(teamVal)}'s remaining purse of ₹${s.left.toLocaleString('en-IN')}.</div>`;
+    } else { warnBox.innerHTML = ''; }
+  } else { warnBox.innerHTML = ''; }
+
+  confirmBtn.disabled = !(selectedPlayerForSale && teamVal && priceVal && Number(priceVal) >= 0 && !blocked);
+}
+
+function updatePreDecideButton(){
+  const btn = document.getElementById('preDecideAssignBtn');
+  if(!btn) return;
+  const teamVal = document.getElementById('preDecideTeamSelect').value;
+  btn.disabled = !(selectedPlayerForPreDecide && teamVal);
+}
+
+function escapeHtml(str){
+  return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function catAbbr(category){
+  return { 'Bhagat':'Bhagat', 'Batsman':'Bat', 'Bowler':'Bowl', 'All Rounder':'AR' }[category] || category;
+}
+
+// ---------- Team card: print & share ----------
+function teamPrintCardHTML(team){
+  const s = teamSummary(team);
+  const m = teamMeta[team] || {};
+  const rowsHtml = s.rows.length
+    ? s.rows.map(r => `<tr>
+        <td>${escapeHtml(catAbbr(r.category))}</td>
+        <td>${escapeHtml(r.name)}${r.preDecided ? ` (${escapeHtml(r.role || 'Pre-decided')})` : ''}</td>
+        <td>₹${Number(r.price).toLocaleString('en-IN')}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="3" style="color:#999;">No players yet</td></tr>`;
+  const metaLine = [m.mentor ? `Mentor: ${m.mentor}` : '', m.captain ? `Captain: ${m.captain}` : ''].filter(Boolean).join(' · ');
+  return `
+    <div class="print-card">
+      <h2>🏏 ${escapeHtml(team)}</h2>
+      <div class="print-meta">Anand Premier League 2026${metaLine ? ' · ' + escapeHtml(metaLine) : ''}</div>
+      <div class="print-summary">
+        <div><b>Purse Left:</b> ₹${s.left.toLocaleString('en-IN')} / ₹${pursePerTeam.toLocaleString('en-IN')}</div>
+        <div><b>Squad:</b> ${s.count} / ${maxPlayersPerTeam}</div>
+      </div>
+      <table>
+        <thead><tr><th>Category</th><th>Player</th><th>Price</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+}
+
+function printTeams(teams){
+  const printArea = document.getElementById('printArea');
+  printArea.innerHTML = teams.map(teamPrintCardHTML).join('');
+  setTimeout(() => window.print(), 50);
+}
+
+function teamShareText(team){
+  const s = teamSummary(team);
+  const m = teamMeta[team] || {};
+  const lines = [];
+  lines.push(`🏏 *${team}* — Anand Premier League 2026`);
+  if(m.mentor) lines.push(`Mentor: ${m.mentor}`);
+  if(m.captain) lines.push(`Captain: ${m.captain}`);
+  lines.push(`Purse Left: ₹${s.left.toLocaleString('en-IN')} / ₹${pursePerTeam.toLocaleString('en-IN')}`);
+  lines.push(`Squad: ${s.count} / ${maxPlayersPerTeam}`);
+  lines.push('');
+  if(s.rows.length){
+    s.rows.forEach(r => {
+      const roleTag = r.preDecided ? ` (${r.role || 'Pre-decided'})` : '';
+      lines.push(`• [${catAbbr(r.category)}] ${r.name}${roleTag} — ₹${Number(r.price).toLocaleString('en-IN')}`);
+    });
+  } else {
+    lines.push('No players yet');
+  }
+  return lines.join('\n');
+}
+
+function shareTeamOnWhatsApp(team){
+  const text = teamShareText(team);
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+async function shareTeamCardAsImage(team){
+  if(typeof html2canvas === 'undefined'){
+    showToast('Image library failed to load — check your internet connection');
+    return;
+  }
+  const cards = document.querySelectorAll('.team-card');
+  let originalCard = null;
+  cards.forEach(c => { if(c.dataset.team === team) originalCard = c; });
+  if(!originalCard) return;
+
+  showToast('Preparing image…');
+
+  // Render an off-screen full-height clone so scrolled-out players aren't cut off.
+  const clone = originalCard.cloneNode(true);
+  clone.style.width = originalCard.offsetWidth + 'px';
+  clone.style.cursor = 'default';
+  const playersBought = clone.querySelector('.players-bought');
+  if(playersBought){ playersBought.style.maxHeight = 'none'; playersBought.style.overflow = 'visible'; }
+
+  const wrapper = document.createElement('div');
+  wrapper.style.position = 'fixed';
+  wrapper.style.left = '-10000px';
+  wrapper.style.top = '0';
+  wrapper.appendChild(clone);
+  document.body.appendChild(wrapper);
+
+  try{
+    const canvas = await html2canvas(clone, { backgroundColor: '#ffffff', scale: 2 });
+    document.body.removeChild(wrapper);
+
+    canvas.toBlob(async (blob) => {
+      if(!blob){ showToast('Could not generate image'); return; }
+      const fileName = `${team.replace(/\s+/g,'_')}_squad.png`;
+      const file = new File([blob], fileName, { type: 'image/png' });
+
+      if(navigator.canShare && navigator.canShare({ files: [file] })){
+        try{
+          await navigator.share({ files: [file], title: `${team} — Squad`, text: `${team} squad — Anand Premier League 2026` });
+        }catch(err){
+          if(err.name !== 'AbortError') showToast('Share cancelled');
+        }
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = fileName;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('This browser can\'t share images directly — image downloaded, opening WhatsApp to attach it');
+        shareTeamOnWhatsApp(team);
+      }
+    }, 'image/png');
+  }catch(err){
+    if(wrapper.parentNode) document.body.removeChild(wrapper);
+    console.error(err);
+    showToast('Could not generate image');
+  }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ---------- Arrow-key navigation for autocomplete search dropdowns ----------
+function highlightSearchItem(items, idx){
+  items.forEach(it => it.classList.remove('highlighted'));
+  if(idx >= 0 && idx < items.length){
+    items[idx].classList.add('highlighted');
+    items[idx].scrollIntoView({ block: 'nearest' });
+  }
+}
+function setupSearchKeyboardNav(inputEl, resultsEl){
+  inputEl.addEventListener('keydown', (e) => {
+    if(resultsEl.classList.contains('hidden')) return;
+    const items = Array.from(resultsEl.querySelectorAll('[data-name]'));
+    if(items.length === 0) return;
+    const currentIdx = items.findIndex(it => it.classList.contains('highlighted'));
+
+    if(e.key === 'ArrowDown'){
+      e.preventDefault();
+      highlightSearchItem(items, (currentIdx + 1) % items.length);
+    } else if(e.key === 'ArrowUp'){
+      e.preventDefault();
+      highlightSearchItem(items, currentIdx <= 0 ? items.length - 1 : currentIdx - 1);
+    } else if(e.key === 'Enter'){
+      if(currentIdx >= 0){
+        e.preventDefault();
+        items[currentIdx].click();
+      }
+    } else if(e.key === 'Escape'){
+      resultsEl.classList.add('hidden');
+    }
+  });
+}
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ['board','auctioneer','players','stats','soldorder','setup','data'].forEach(id => {
+      document.getElementById('tab-'+id).classList.toggle('hidden', id !== btn.dataset.tab);
+    });
+  });
+});
+
+// ---------- Live Board: tap a team card to share it as an image ----------
+document.getElementById('teamGrid').addEventListener('click', (e) => {
+  const card = e.target.closest('.team-card');
+  if(!card) return;
+  shareTeamCardAsImage(card.dataset.team);
+});
+document.getElementById('printAllTeamsBtn').addEventListener('click', () => {
+  printTeams(TEAM_NAMES);
+});
+
+// ---------- Player search (Auctioneer) ----------
+const playerSearch = document.getElementById('playerSearch');
+const searchResults = document.getElementById('searchResults');
+playerSearch.addEventListener('input', () => {
+  const q = playerSearch.value.trim().toLowerCase();
+  if(!q){ searchResults.classList.add('hidden'); searchResults.innerHTML=''; return; }
+  const avail = availablePlayers().filter(p => p.name.toLowerCase().includes(q)).slice(0, 30);
+  if(avail.length === 0){
+    searchResults.innerHTML = '<div style="color:#aaa;">No available player matches.</div>';
+  } else {
+    searchResults.innerHTML = avail.map(p =>
+      `<div data-name="${escapeHtml(p.name)}"><span>${escapeHtml(p.name)}</span><span class="cat-tag">${escapeHtml(p.category)}</span></div>`
+    ).join('');
+  }
+  searchResults.classList.remove('hidden');
+});
+searchResults.addEventListener('click', (e) => {
+  const row = e.target.closest('[data-name]');
+  if(!row) return;
+  const p = MASTER_PLAYERS.find(pp => pp.name === row.dataset.name);
+  selectedPlayerForSale = p;
+  playerSearch.value = '';
+  searchResults.classList.add('hidden'); searchResults.innerHTML='';
+  document.getElementById('selectedPlayerBox').innerHTML = `
+    <div class="selected-player">
+      <div class="nm">${escapeHtml(p.name)}</div>
+      <div class="ct">${escapeHtml(p.category)}</div>
+    </div>`;
+  updateSaleButtons();
+});
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('.search-box')) { searchResults.classList.add('hidden'); }
+});
+setupSearchKeyboardNav(playerSearch, searchResults);
+
+document.getElementById('setLotBtn').addEventListener('click', () => {
+  if(!selectedPlayerForSale) return;
+  currentLot = { name: selectedPlayerForSale.name, category: selectedPlayerForSale.category };
+  persistAndRender();
+  showToast('Shown on Live Board');
+});
+document.getElementById('clearLotBtn').addEventListener('click', () => {
+  selectedPlayerForSale = null;
+  currentLot = null;
+  document.getElementById('selectedPlayerBox').innerHTML = '';
+  document.getElementById('priceInput').value = '';
+  document.getElementById('teamSelect').value = '';
+  persistAndRender();
+});
+
+document.getElementById('teamSelect').addEventListener('change', updateSaleButtons);
+document.getElementById('priceInput').addEventListener('input', updateSaleButtons);
+document.getElementById('priceInput').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    const confirmBtn = document.getElementById('confirmSaleBtn');
+    if(!confirmBtn.disabled) confirmBtn.click();
+  }
+});
+
+document.getElementById('confirmSaleBtn').addEventListener('click', () => {
+  const team = document.getElementById('teamSelect').value;
+  const price = Number(document.getElementById('priceInput').value);
+  if(!selectedPlayerForSale || !team || isNaN(price) || document.getElementById('priceInput').value === ''){
+    showToast('Pick a player, team and price first');
+    return;
+  }
+  if(teamSummary(team).full){
+    showToast(`${team} squad is already full (${maxPlayersPerTeam} players)`);
+    return;
+  }
+
+  soldPlayers.push({
+    name: selectedPlayerForSale.name,
+    category: selectedPlayerForSale.category,
+    team, price, ts: Date.now(), preDecided: false
+  });
+  currentLot = null;
+  selectedPlayerForSale = null;
+  document.getElementById('selectedPlayerBox').innerHTML = '';
+  document.getElementById('priceInput').value = '';
+  document.getElementById('teamSelect').value = '';
+
+  const ok = persistAndRender();
+  showToast(ok ? 'Sale recorded ✅' : '⚠ Sale NOT saved — see the warning above');
+});
+
+document.getElementById('undoBtn').addEventListener('click', () => {
+  if(soldPlayers.length === 0) return;
+  const last = soldPlayers[soldPlayers.length - 1];
+  if(!confirm(`Undo sale of "${last.name}" to ${last.team} for ₹${last.price}?`)) return;
+  soldPlayers.pop();
+  persistAndRender();
+  showToast('Last sale undone');
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if(!confirm('This will clear ALL sold players and the current lot. Are you sure?')) return;
+  if(!confirm('Really sure? This cannot be undone.')) return;
+  soldPlayers = [];
+  currentLot = null;
+  persistAndRender();
+  showToast('Auction reset');
+});
+
+// ---------- Player list tab ----------
+document.getElementById('playerListSearch').addEventListener('input', renderPlayerTable);
+document.querySelectorAll('.sortable-th').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    if(playerListSort.key === key){
+      playerListSort.dir *= -1;
+    } else {
+      playerListSort = { key, dir: 1 };
+    }
+    renderPlayerTable();
+  });
+});
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    playerListFilter = p.dataset.filter;
+    renderPlayerTable();
+  });
+});
+
+// ---------- Setup tab ----------
+document.getElementById('addTeamBtn').addEventListener('click', () => {
+  let n = TEAM_NAMES.length + 1;
+  let name = `Team ${n}`;
+  while(TEAM_NAMES.includes(name)){ n++; name = `Team ${n}`; }
+  TEAM_NAMES = TEAM_NAMES.concat([name]);
+  persistAndRender();
+  showToast(`Added "${name}" — rename it below if you like`);
+});
+
+document.getElementById('teamNameGrid').addEventListener('click', (e) => {
+  const btn = e.target.closest('.remove-team-btn');
+  if(!btn) return;
+  const idx = Number(btn.dataset.idx);
+  const team = TEAM_NAMES[idx];
+  if(!team) return;
+  if(TEAM_NAMES.length <= 1){
+    showToast('At least one team must remain');
+    return;
+  }
+  const s = teamSummary(team);
+  let msg = `Remove team "${team}"?`;
+  if(s.count > 0) msg += ` This will permanently delete ${s.count} sold player record(s) assigned to this team.`;
+  if(!confirm(msg)) return;
+
+  soldPlayers = soldPlayers.filter(sp => sp.team !== team);
+  delete teamMeta[team];
+  TEAM_NAMES = TEAM_NAMES.filter((t, i) => i !== idx);
+  persistAndRender();
+  showToast(`Team "${team}" removed`);
+});
+
+document.getElementById('saveTeamNamesBtn').addEventListener('click', () => {
+  const inputs = Array.from(document.querySelectorAll('.team-name-input'));
+  const newNames = inputs.map(inp => inp.value.trim());
+
+  if(newNames.some(n => !n)){
+    showToast('Team names cannot be blank');
+    return;
+  }
+  const seen = new Set();
+  for(const n of newNames){
+    if(seen.has(n)){
+      showToast(`Duplicate team name: "${n}"`);
+      return;
+    }
+    seen.add(n);
+  }
+
+  const oldNames = TEAM_NAMES.slice();
+  const renameMap = {}; // oldName -> newName, only for actually-changed names
+  oldNames.forEach((oldName, i) => {
+    if(oldName !== newNames[i]) renameMap[oldName] = newNames[i];
+  });
+
+  if(Object.keys(renameMap).length === 0){
+    showToast('No changes to save');
+    return;
+  }
+
+  // Carry sold players, current lot's team ref, and mentor/captain info to the new names.
+  soldPlayers.forEach(s => { if(renameMap[s.team]) s.team = renameMap[s.team]; });
+  const newTeamMeta = {};
+  Object.keys(teamMeta).forEach(k => { newTeamMeta[renameMap[k] || k] = teamMeta[k]; });
+  teamMeta = newTeamMeta;
+
+  TEAM_NAMES = newNames;
+  persistAndRender();
+  showToast('Team names updated');
+});
+
+document.getElementById('saveSetupBtn').addEventListener('click', () => {
+  document.querySelectorAll('.setup-input').forEach(inp => {
+    const t = inp.dataset.team, f = inp.dataset.field;
+    teamMeta[t] = teamMeta[t] || {};
+    teamMeta[t][f] = inp.value;
+  });
+  persistAndRender();
+  showToast('Team info saved');
+});
+document.getElementById('savePurseBtn').addEventListener('click', () => {
+  const v = Number(document.getElementById('pursePerTeamInput').value);
+  if(v > 0){
+    pursePerTeam = v;
+    persistAndRender();
+    showToast('Purse per team updated');
+  }
+});
+
+document.getElementById('saveMaxPlayersBtn').addEventListener('click', () => {
+  const v = Number(document.getElementById('maxPlayersInput').value);
+  if(v > 0){
+    maxPlayersPerTeam = v;
+    persistAndRender();
+    showToast('Squad limit updated');
+  }
+});
+
+// ---------- Pre-decide players (Setup tab) ----------
+const preDecideSearch = document.getElementById('preDecideSearch');
+const preDecideResults = document.getElementById('preDecideResults');
+preDecideSearch.addEventListener('input', () => {
+  const q = preDecideSearch.value.trim().toLowerCase();
+  if(!q){ preDecideResults.classList.add('hidden'); preDecideResults.innerHTML=''; return; }
+  const avail = availablePlayers().filter(p => p.name.toLowerCase().includes(q)).slice(0, 30);
+  preDecideResults.innerHTML = avail.length === 0
+    ? '<div style="color:#aaa;">No available player matches.</div>'
+    : avail.map(p => `<div data-name="${escapeHtml(p.name)}"><span>${escapeHtml(p.name)}</span><span class="cat-tag">${escapeHtml(p.category)}</span></div>`).join('');
+  preDecideResults.classList.remove('hidden');
+});
+preDecideResults.addEventListener('click', (e) => {
+  const row = e.target.closest('[data-name]');
+  if(!row) return;
+  const p = MASTER_PLAYERS.find(pp => pp.name === row.dataset.name);
+  selectedPlayerForPreDecide = p;
+  preDecideSearch.value = '';
+  preDecideResults.classList.add('hidden'); preDecideResults.innerHTML = '';
+  document.getElementById('preDecideSelectedBox').innerHTML = `
+    <div class="selected-player">
+      <div class="nm">${escapeHtml(p.name)}</div>
+      <div class="ct">${escapeHtml(p.category)}</div>
+    </div>`;
+  updatePreDecideButton();
+});
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('#preDecideSearch') && !e.target.closest('#preDecideResults')){
+    preDecideResults.classList.add('hidden');
+  }
+});
+setupSearchKeyboardNav(preDecideSearch, preDecideResults);
+document.getElementById('preDecideTeamSelect').addEventListener('change', updatePreDecideButton);
+document.getElementById('preDecidePriceInput').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    const assignBtn = document.getElementById('preDecideAssignBtn');
+    if(!assignBtn.disabled) assignBtn.click();
+  }
+});
+
+document.getElementById('preDecideAssignBtn').addEventListener('click', () => {
+  const team = document.getElementById('preDecideTeamSelect').value;
+  const role = document.getElementById('preDecideRoleSelect').value;
+  const priceRaw = document.getElementById('preDecidePriceInput').value;
+  const price = priceRaw === '' ? 0 : Number(priceRaw);
+  if(!selectedPlayerForPreDecide || !team) return;
+  if(teamSummary(team).full){
+    showToast(`${team} squad is already full (${maxPlayersPerTeam} players)`);
+    return;
+  }
+
+  soldPlayers.push({
+    name: selectedPlayerForPreDecide.name,
+    category: selectedPlayerForPreDecide.category,
+    team, price, ts: Date.now(), preDecided: true, role
+  });
+  selectedPlayerForPreDecide = null;
+  document.getElementById('preDecideSelectedBox').innerHTML = '';
+  document.getElementById('preDecideTeamSelect').value = '';
+  document.getElementById('preDecideRoleSelect').value = 'Captain';
+  document.getElementById('preDecidePriceInput').value = '0';
+
+  const ok = persistAndRender();
+  showToast(ok ? 'Player pre-assigned ✅' : '⚠ Not saved — see console');
+});
+
+document.getElementById('preDecideList').addEventListener('click', (e) => {
+  const btn = e.target.closest('.remove-predecide');
+  if(!btn) return;
+  const idx = Number(btn.dataset.idx);
+  const rec = soldPlayers[idx];
+  if(!rec) return;
+  if(!confirm(`Remove ${rec.role || 'pre-decided'} pick "${rec.name}" from ${rec.team}?`)) return;
+  soldPlayers.splice(idx, 1);
+  persistAndRender();
+  showToast('Pre-decided pick removed');
+});
+
+// ---------- Sold Order tab: edit bid price ----------
+document.getElementById('soldOrderTableBody').addEventListener('click', (e) => {
+  const btn = e.target.closest('.edit-sold-price');
+  if(!btn) return;
+  const idx = Number(btn.dataset.idx);
+  const rec = soldPlayers[idx];
+  if(!rec) return;
+  const raw = prompt(`New price for "${rec.name}" (${rec.team}):`, rec.price);
+  if(raw === null) return; // cancelled
+  const val = Number(raw);
+  if(raw.trim() === '' || isNaN(val) || val < 0){
+    showToast('Enter a valid non-negative price');
+    return;
+  }
+  rec.price = val;
+  persistAndRender();
+  showToast('Bid price updated');
+});
+
+// ---------- Excel Import / Export ----------
+function getField(row, ...names){
+  const keys = Object.keys(row);
+  for(const name of names){
+    const k = keys.find(k => k.trim().toLowerCase() === name.toLowerCase());
+    if(k !== undefined && String(row[k]).trim() !== '') return String(row[k]).trim();
+  }
+  return '';
+}
+const VALID_CATEGORIES = ['Bhagat','Batsman','Bowler','All Rounder'];
+
+function readExcelFile(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try{
+        const wb = XLSX.read(e.target.result, {type:'array'});
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        resolve(XLSX.utils.sheet_to_json(sheet, {defval:''}));
+      }catch(err){ reject(err); }
+    };
+    reader.onerror = () => reject(new Error('Could not read the file'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+document.getElementById('exportExcelBtn').addEventListener('click', () => {
+  const sm = soldMap();
+
+  const playersSheet = MASTER_PLAYERS.map(p => {
+    const s = sm[p.name];
+    return {
+      Name: p.name, Category: p.category, Mobile: p.mobile || '', Followup: p.followup || '',
+      Status: s ? 'Sold' : 'Available', Team: s ? s.team : '', Price: s ? s.price : ''
+    };
+  });
+
+  const soldOrderSheet = [...soldPlayers]
+    .sort((a,b) => Number(b.price) - Number(a.price))
+    .map((r, i) => ({
+      '#': i+1, Player: r.name, Category: r.category, Team: r.team, Price: r.price,
+      Role: r.preDecided ? (r.role || 'Pre-decided') : ''
+    }));
+
+  const teamSummarySheet = TEAM_NAMES.map(t => {
+    const s = teamSummary(t);
+    const m = teamMeta[t] || {};
+    return {
+      Team: t, Mentor: m.mentor || '', Captain: m.captain || '',
+      'Purse Left': s.left, 'Purse Spent': s.spent, 'Squad Count': s.count, 'Squad Limit': maxPlayersPerTeam
+    };
+  });
+
+  const settingsSheet = [
+    { Setting: 'Purse Per Team', Value: pursePerTeam },
+    { Setting: 'Max Players Per Team', Value: maxPlayersPerTeam },
+    ...TEAM_NAMES.map((t, i) => ({ Setting: `Team ${i+1} Name`, Value: t }))
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(playersSheet), 'Players');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(soldOrderSheet), 'Sold Order');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(teamSummarySheet), 'Team Summary');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(settingsSheet), 'Settings');
+  XLSX.writeFile(wb, `APL_2026_Auction_${new Date().toISOString().slice(0,10)}.xlsx`);
+  showToast('Excel exported');
+});
+
+document.getElementById('playerImportFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  const statusEl = document.getElementById('playerImportStatus');
+  if(!file) return;
+  try{
+    const rows = await readExcelFile(file);
+    const parsed = [];
+    const errors = [];
+    rows.forEach((row, i) => {
+      const name = getField(row, 'Name', 'Player', 'Player Name');
+      const category = getField(row, 'Category');
+      const mobile = getField(row, 'Mobile', 'Mobile Number', 'Phone');
+      const followup = getField(row, 'Followup', 'Follow-up', 'Follow Up');
+      if(!name){ return; } // skip fully blank rows
+      if(!VALID_CATEGORIES.includes(category)){
+        errors.push(`Row ${i+2}: "${name}" has invalid/missing category "${category}"`);
+        return;
+      }
+      parsed.push({ name, category, mobile, followup });
+    });
+
+    if(parsed.length === 0){
+      statusEl.innerHTML = `<span style="color:var(--red);">No valid player rows found. ${errors.slice(0,3).join('; ')}</span>`;
+      e.target.value = '';
+      return;
+    }
+
+    const mode = document.getElementById('playerImportMode').value;
+    if(mode === 'replace'){
+      const stillSoldButMissing = soldPlayers.filter(s => !parsed.find(p => p.name.toLowerCase() === s.name.toLowerCase()));
+      if(stillSoldButMissing.length > 0){
+        if(!confirm(`${stillSoldButMissing.length} already-sold player(s) are not in this file and will no longer appear in the master list (their sale records stay in Sold Order). Continue?`)) {
+          e.target.value = '';
+          return;
+        }
+      }
+      MASTER_PLAYERS = parsed;
+    } else {
+      const existingNames = new Set(MASTER_PLAYERS.map(p => p.name.toLowerCase()));
+      const toAdd = parsed.filter(p => !existingNames.has(p.name.toLowerCase()));
+      MASTER_PLAYERS = MASTER_PLAYERS.concat(toAdd);
+    }
+
+    persistAndRender();
+    let msg = `Imported ${parsed.length} player row(s).`;
+    if(errors.length) msg += ` Skipped ${errors.length} row(s) with issues.`;
+    statusEl.innerHTML = `<span style="color:var(--green);">${escapeHtml(msg)}</span>`;
+    showToast('Player list updated');
+  }catch(err){
+    console.error(err);
+    statusEl.innerHTML = `<span style="color:var(--red);">Could not read that file: ${escapeHtml(err.message)}</span>`;
+  }
+  e.target.value = '';
+});
+
+document.getElementById('soldImportFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  const statusEl = document.getElementById('soldImportStatus');
+  if(!file) return;
+  try{
+    const rows = await readExcelFile(file);
+    let updated = 0, added = 0, skipped = 0;
+    const skipReasons = [];
+
+    rows.forEach((row, i) => {
+      const name = getField(row, 'Player', 'Name', 'Player Name');
+      const team = getField(row, 'Team');
+      const priceRaw = getField(row, 'Price');
+      if(!name || !team || priceRaw === ''){ return; } // skip blank rows
+      const price = Number(priceRaw);
+      if(isNaN(price) || price < 0){
+        skipped++; skipReasons.push(`Row ${i+2}: "${name}" has an invalid price`);
+        return;
+      }
+      const teamMatch = TEAM_NAMES.find(t => t.toLowerCase() === team.toLowerCase());
+      if(!teamMatch){
+        skipped++; skipReasons.push(`Row ${i+2}: team "${team}" doesn't match any current team`);
+        return;
+      }
+
+      const existing = soldPlayers.find(s => s.name.toLowerCase() === name.toLowerCase());
+      if(existing){
+        existing.team = teamMatch;
+        existing.price = price;
+        updated++;
+      } else {
+        const master = MASTER_PLAYERS.find(p => p.name.toLowerCase() === name.toLowerCase());
+        if(!master){
+          skipped++; skipReasons.push(`Row ${i+2}: "${name}" not found in player master list`);
+          return;
+        }
+        soldPlayers.push({ name: master.name, category: master.category, team: teamMatch, price, ts: Date.now(), preDecided: false });
+        added++;
+      }
+    });
+
+    persistAndRender();
+    let msg = `Updated ${updated}, added ${added} sale(s).`;
+    if(skipped) msg += ` Skipped ${skipped} row(s): ${skipReasons.slice(0,3).join('; ')}`;
+    statusEl.innerHTML = `<span style="color:${skipped ? 'var(--red)' : 'var(--green)'};">${escapeHtml(msg)}</span>`;
+    showToast('Sold prices updated');
+  }catch(err){
+    console.error(err);
+    statusEl.innerHTML = `<span style="color:var(--red);">Could not read that file: ${escapeHtml(err.message)}</span>`;
+  }
+  e.target.value = '';
+});
+
+// ---------- Startup ----------
+loadState();
+window.addEventListener('beforeunload', () => {
+  // Belt-and-braces: make sure the very latest state is on disk before the tab closes.
+  writeStorage();
+});
+</script>
+</body>
+</html>
