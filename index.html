@@ -102,16 +102,29 @@
   .badge{font-size:.66rem; padding:3px 10px; border-radius:20px; background:var(--cream); border:1px solid var(--line); color:var(--ink); font-weight:700;}
 
   .players-bought{font-size:.85rem; max-height:170px; overflow-y:auto;}
-  .players-bought div{padding:6px 0; border-bottom:1px dashed var(--line); display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
+  .players-bought div{padding:8px 0; border-bottom:1px dashed var(--line); display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
   .players-bought div:last-child{border-bottom:none;}
-  .players-bought .p-left{display:flex; align-items:baseline; gap:7px; min-width:0;}
+  .players-bought .p-left{display:flex; align-items:flex-start; gap:8px; min-width:0; flex:1;}
   .players-bought .p-cat{
-    flex:0 0 auto; font-size:.63rem; font-weight:800; color:#fff; padding:2px 7px; border-radius:6px;
-    white-space:nowrap; letter-spacing:.2px;
+    flex:0 0 auto; font-size:.63rem; font-weight:800; color:#fff; padding:3px 7px; border-radius:6px;
+    white-space:nowrap; letter-spacing:.2px; margin-top:2px; line-height:1.3;
   }
-  .players-bought .p-name{font-weight:700; overflow-wrap:anywhere; color:var(--ink);}
-  .players-bought .p-price{color:var(--green); font-weight:800; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .players-bought .p-name{font-weight:700; overflow-wrap:anywhere; color:var(--ink); min-width:0; line-height:1.35;}
+  .players-bought .p-price{color:var(--green); font-weight:800; white-space:nowrap; font-variant-numeric:tabular-nums; flex:0 0 auto; padding-top:2px;}
   .players-bought .empty-row{color:var(--grey-light); font-style:italic; font-weight:500;}
+
+  .top-sold-card{border:1px solid var(--line); border-radius:var(--r-md); padding:14px; background:var(--paper);}
+  .top-sold-card h4{margin:0 0 10px; font-family:var(--font-display); font-size:1.15rem; font-weight:700;}
+  .top-sold-row{display:flex; align-items:flex-start; gap:9px; padding:7px 0; border-bottom:1px dashed var(--line);}
+  .top-sold-row:last-child{border-bottom:none;}
+  .top-sold-rank{
+    flex:0 0 auto; width:20px; height:20px; border-radius:50%; background:var(--cream); color:var(--navy);
+    font-size:.7rem; font-weight:800; display:flex; align-items:center; justify-content:center; margin-top:1px;
+  }
+  .top-sold-info{flex:1; min-width:0;}
+  .top-sold-name{font-weight:700; font-size:.85rem; color:var(--ink); overflow-wrap:anywhere; line-height:1.3;}
+  .top-sold-team{font-size:.72rem; color:var(--grey); font-weight:600;}
+  .top-sold-price{flex:0 0 auto; font-weight:800; color:var(--green); font-size:.85rem; font-variant-numeric:tabular-nums; padding-top:1px;}
 
   .cat-bhagat{background:var(--cat-bhagat);}
   .cat-bat{background:var(--cat-bat);}
@@ -135,21 +148,6 @@
     .print-card th{background:#132449; color:#fff;}
     .print-card .print-summary{display:flex; gap:24px; margin-bottom:14px; font-size:.95rem;}
   }
-
-  .now-bidding{
-    position:relative; overflow:hidden;
-    background:
-      radial-gradient(600px 220px at 85% -20%, rgba(255,255,255,.35), transparent 60%),
-      linear-gradient(135deg,var(--gold),var(--gold-dark));
-    color:var(--navy-dark); border-radius:var(--r-lg); padding:30px 24px; text-align:center; margin-bottom:18px;
-    box-shadow:var(--shadow-gold); border:1px solid rgba(255,255,255,.4);
-  }
-  .now-bidding .lbl{font-size:.8rem; letter-spacing:3px; font-weight:800; opacity:.65; font-family:var(--font-display);}
-  .now-bidding .nm{font-family:var(--font-display); font-size:2.8rem; font-weight:700; margin:4px 0; line-height:1.05;}
-  .now-bidding .ct{font-size:1rem; font-weight:700; display:inline-block; background:rgba(255,255,255,.35); padding:3px 14px; border-radius:20px;}
-  .now-bidding.empty{background:linear-gradient(135deg,var(--navy-mid),var(--navy)); color:#fff; box-shadow:var(--shadow-md);}
-  .now-bidding.empty .lbl{opacity:.55;}
-  .now-bidding.empty .nm{opacity:.85; font-size:1.5rem;}
 
   .row{display:flex; gap:14px; flex-wrap:wrap;}
   .col{flex:1; min-width:260px;}
@@ -234,7 +232,6 @@
 
   @media (max-width:640px){
     header{padding:16px 16px 14px;} header h1{font-size:1.2rem;}
-    .now-bidding{padding:22px 16px;} .now-bidding .nm{font-size:1.9rem;}
     main{padding:14px 12px 32px;}
   }
 </style>
@@ -266,7 +263,6 @@
 
   <!-- LIVE BOARD -->
   <section id="tab-board">
-    <div id="nowBiddingBox"></div>
     <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
       <button class="btn btn-outline" id="printAllTeamsBtn">🖨 Print All Squads</button>
     </div>
@@ -355,6 +351,12 @@
           <tbody id="statsTableBody"></tbody>
         </table>
       </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3 style="margin-top:0;color:var(--navy)">Top 5 Sold — By Category</h3>
+      <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">Highest-priced sold players in each category.</p>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));" id="topSoldGrid"></div>
     </div>
   </section>
 
@@ -605,38 +607,19 @@ function bidStats(team){
 
 // ---------- Rendering ----------
 function renderAll(){
-  renderNowBidding();
   renderBoard();
   renderTeamSelect();
   renderPreDecideTeamSelect();
   renderSalesLog();
   renderPlayerTable();
   renderStats();
+  renderTopSold();
   renderSoldOrder();
   renderSetup();
   renderTeamNameGrid();
   renderPreDecideList();
   updateSaleButtons();
   updatePreDecideButton();
-}
-
-function renderNowBidding(){
-  const box = document.getElementById('nowBiddingBox');
-  if(!currentLot){
-    box.innerHTML = `
-      <div class="now-bidding empty">
-        <div class="lbl">NOW BIDDING</div>
-        <div class="nm">No player on the block</div>
-        <div class="ct">Pick one from the Auctioneer tab to start the next lot</div>
-      </div>`;
-    return;
-  }
-  box.innerHTML = `
-    <div class="now-bidding">
-      <div class="lbl">NOW BIDDING</div>
-      <div class="nm">${escapeHtml(currentLot.name)}</div>
-      <div class="ct">${escapeHtml(currentLot.category)}</div>
-    </div>`;
 }
 
 function renderBoard(){
@@ -770,6 +753,35 @@ function renderStats(){
       <td>${escapeHtml(b.lowest.name)}</td>
       <td style="font-weight:bold;">₹${b.avg.toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
     </tr>`;
+  }).join('');
+}
+
+function renderTopSold(){
+  const grid = document.getElementById('topSoldGrid');
+  if(!grid) return;
+  const categories = ['Bhagat', 'Batsman', 'Bowler', 'All Rounder'];
+  grid.innerHTML = categories.map(cat => {
+    const top5 = soldPlayers
+      .filter(r => r.category === cat)
+      .slice()
+      .sort((a, b) => Number(b.price) - Number(a.price))
+      .slice(0, 5);
+    const rowsHtml = top5.length
+      ? top5.map((r, i) => `
+        <div class="top-sold-row">
+          <div class="top-sold-rank">${i+1}</div>
+          <div class="top-sold-info">
+            <div class="top-sold-name">${escapeHtml(r.name)}</div>
+            <div class="top-sold-team">${escapeHtml(r.team)}</div>
+          </div>
+          <div class="top-sold-price">₹${Number(r.price).toLocaleString('en-IN')}</div>
+        </div>`).join('')
+      : `<div style="color:var(--grey-light);font-size:.82rem;font-style:italic;">No ${escapeHtml(cat.toLowerCase())} sold yet</div>`;
+    return `
+      <div class="top-sold-card">
+        <h4 style="color:${catColorVar(cat)};">${escapeHtml(cat)}</h4>
+        ${rowsHtml}
+      </div>`;
   }).join('');
 }
 
