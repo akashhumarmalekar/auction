@@ -628,7 +628,7 @@ function renderBoard(){
     const s = teamSummary(team);
     const pct = Math.max(0, Math.min(100, (s.spent / pursePerTeam) * 100));
     const meta = teamMeta[team] || {};
-    const metaLine = [meta.mentor, meta.captain].filter(Boolean).join(' · ');
+    const metaLine = [metaPersonLabel(meta.mentor, meta.mentorCategory), metaPersonLabel(meta.captain, meta.captainCategory)].filter(Boolean).join(' · ');
     const low = s.left < 0;
     const playersHtml = s.rows.length
       ? s.rows.map(r => `<div><span class="p-left"><span class="p-name">${escapeHtml(r.name)}${r.preDecided ? ` <span style="color:var(--grey);font-weight:normal;">(${escapeHtml(r.role || 'Pre-decided')})</span>` : ''}</span><span class="p-cat ${catClass(r.category)}">${escapeHtml(catAbbr(r.category))}</span></span><span class="p-price">₹${Number(r.price).toLocaleString('en-IN')}</span></div>`).join('')
@@ -809,6 +809,8 @@ function renderSoldOrder(){
 
 function renderSetup(){
   const grid = document.getElementById('setupGrid');
+  const catOptions = (selected) => ['', 'Bhagat', 'Batsman', 'Bowler', 'All Rounder']
+    .map(c => `<option value="${c}" ${c === (selected||'') ? 'selected' : ''}>${c || 'No category'}</option>`).join('');
   grid.innerHTML = TEAM_NAMES.map(t => {
     const m = teamMeta[t] || {};
     return `
@@ -816,8 +818,12 @@ function renderSetup(){
         <div style="font-weight:bold;color:var(--navy);margin-bottom:8px;">${escapeHtml(t)}</div>
         <label style="margin-top:0;">Mentor</label>
         <input type="text" data-team="${escapeHtml(t)}" data-field="mentor" class="setup-input" value="${escapeHtml(m.mentor||'')}">
+        <label>Mentor Category</label>
+        <select data-team="${escapeHtml(t)}" data-field="mentorCategory" class="setup-input">${catOptions(m.mentorCategory)}</select>
         <label>Captain</label>
         <input type="text" data-team="${escapeHtml(t)}" data-field="captain" class="setup-input" value="${escapeHtml(m.captain||'')}">
+        <label>Captain Category</label>
+        <select data-team="${escapeHtml(t)}" data-field="captainCategory" class="setup-input">${catOptions(m.captainCategory)}</select>
       </div>`;
   }).join('');
   document.getElementById('pursePerTeamInput').value = pursePerTeam;
@@ -907,6 +913,10 @@ function catClass(category){
 function catColorVar(category){
   return { 'Bhagat':'var(--cat-bhagat)', 'Batsman':'var(--cat-bat)', 'Bowler':'var(--cat-bowl)', 'All Rounder':'var(--cat-ar)' }[category] || 'var(--grey)';
 }
+function metaPersonLabel(name, category){
+  if(!name) return '';
+  return category ? `${name} (${catAbbr(category)})` : name;
+}
 
 // ---------- Team card: print & share ----------
 function teamPrintCardHTML(team){
@@ -919,7 +929,7 @@ function teamPrintCardHTML(team){
         <td>₹${Number(r.price).toLocaleString('en-IN')}</td>
       </tr>`).join('')
     : `<tr><td colspan="3" style="color:#999;">No players yet</td></tr>`;
-  const metaLine = [m.mentor ? `Mentor: ${m.mentor}` : '', m.captain ? `Captain: ${m.captain}` : ''].filter(Boolean).join(' · ');
+  const metaLine = [m.mentor ? `Mentor: ${metaPersonLabel(m.mentor, m.mentorCategory)}` : '', m.captain ? `Captain: ${metaPersonLabel(m.captain, m.captainCategory)}` : ''].filter(Boolean).join(' · ');
   return `
     <div class="print-card">
       <h2>🏏 ${escapeHtml(team)}</h2>
@@ -946,8 +956,8 @@ function teamShareText(team){
   const m = teamMeta[team] || {};
   const lines = [];
   lines.push(`🏏 *${team}* — Anand Premier League 2026`);
-  if(m.mentor) lines.push(`Mentor: ${m.mentor}`);
-  if(m.captain) lines.push(`Captain: ${m.captain}`);
+  if(m.mentor) lines.push(`Mentor: ${metaPersonLabel(m.mentor, m.mentorCategory)}`);
+  if(m.captain) lines.push(`Captain: ${metaPersonLabel(m.captain, m.captainCategory)}`);
   lines.push(`Purse Left: ₹${s.left.toLocaleString('en-IN')} / ₹${pursePerTeam.toLocaleString('en-IN')}`);
   lines.push(`Squad: ${s.count} / ${maxPlayersPerTeam}`);
   lines.push('');
@@ -1455,7 +1465,7 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
     const s = teamSummary(t);
     const m = teamMeta[t] || {};
     return {
-      Team: t, Mentor: m.mentor || '', Captain: m.captain || '',
+      Team: t, Mentor: m.mentor || '', 'Mentor Category': m.mentorCategory || '', Captain: m.captain || '', 'Captain Category': m.captainCategory || '',
       'Purse Left': s.left, 'Purse Spent': s.spent, 'Squad Count': s.count, 'Squad Limit': maxPlayersPerTeam
     };
   });
