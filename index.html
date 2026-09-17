@@ -587,6 +587,9 @@ function teamSummary(team){
   const spent = rows.reduce((a,b) => a + Number(b.price||0), 0);
   const cats = {'Bhagat':0,'Batsman':0,'Bowler':0,'All Rounder':0};
   rows.forEach(r => { if(cats[r.category] !== undefined) cats[r.category]++; });
+  const meta = teamMeta[team] || {};
+  if(meta.mentor && cats[meta.mentorCategory] !== undefined) cats[meta.mentorCategory]++;
+  if(meta.captain && cats[meta.captainCategory] !== undefined) cats[meta.captainCategory]++;
   const count = rows.length;
   const full = count >= maxPlayersPerTeam;
   return { rows, spent, left: pursePerTeam - spent, cats, count, slotsLeft: Math.max(0, maxPlayersPerTeam - count), full };
