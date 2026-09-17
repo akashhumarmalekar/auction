@@ -4,53 +4,123 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Anand Premier League 2026 — Live Auction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy:#1a2e5c; --navy-dark:#101d3d; --gold:#c9932c; --gold-light:#e8c574;
-    --cream:#f7f3e9; --green:#2e7d4f; --red:#b00020; --grey:#6b7280; --line:#e2e2e2;
+    --navy:#132449; --navy-dark:#0a1530; --navy-mid:#1c3564;
+    --gold:#c6963e; --gold-light:#ecd396; --gold-dark:#a3782b;
+    --cream:#f6f2e6; --paper:#fffdf8;
+    --green:#1e8a54; --green-light:#e5f4ec;
+    --red:#b3273f; --red-light:#fbe9ec;
+    --grey:#6b7280; --grey-light:#9aa1ad; --line:#e7e1d2; --line-soft:#f0ece0;
+    --ink:#1b1f2a;
+    --cat-bhagat:#a3782b; --cat-bat:#2c5aa0; --cat-bowl:#1e8a54; --cat-ar:#7248a8;
+    --r-sm:9px; --r-md:14px; --r-lg:22px;
+    --shadow-sm:0 1px 3px rgba(19,36,73,.08), 0 1px 2px rgba(19,36,73,.05);
+    --shadow-md:0 6px 20px rgba(19,36,73,.10);
+    --shadow-gold:0 10px 30px rgba(198,150,62,.28);
+    --font-display:'Barlow Condensed', sans-serif;
+    --font-body:'Manrope', sans-serif;
   }
   *{box-sizing:border-box;}
+  ::selection{background:var(--gold-light); color:var(--navy-dark);}
   body{
-    margin:0; font-family:Arial, Helvetica, sans-serif; background:var(--cream); color:#1c1c1c;
+    margin:0; font-family:var(--font-body); background:var(--cream); color:var(--ink);
+    -webkit-font-smoothing:antialiased;
   }
+  h1,h2,h3{font-family:var(--font-display);}
+  :focus-visible{outline:2px solid var(--gold-dark); outline-offset:2px;}
+
   header{
-    background:linear-gradient(135deg,var(--navy),var(--navy-dark)); color:#fff;
-    padding:18px 24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    background:
+      radial-gradient(1100px 260px at 12% -40%, rgba(198,150,62,.25), transparent 60%),
+      linear-gradient(120deg,var(--navy),var(--navy-dark));
+    color:#fff; padding:20px 24px 18px; display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:10px; position:relative; border-bottom:3px solid var(--gold);
   }
-  header h1{margin:0; font-size:1.35rem; letter-spacing:.5px;}
-  header .sub{font-size:.8rem; opacity:.8;}
-  nav{display:flex; gap:6px; padding:10px 16px; background:#fff; border-bottom:2px solid var(--gold); flex-wrap:wrap;}
+  header .brand{display:flex; align-items:center; gap:12px;}
+  header .crest{
+    width:42px; height:42px; border-radius:11px; background:linear-gradient(155deg,var(--gold-light),var(--gold-dark));
+    display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex:0 0 auto;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.25), 0 4px 10px rgba(0,0,0,.25);
+  }
+  header h1{
+    margin:0; font-weight:700; font-size:1.55rem; letter-spacing:.4px; line-height:1.1;
+    text-transform:uppercase;
+  }
+  header .sub{font-size:.78rem; opacity:.75; font-weight:500; letter-spacing:.2px;}
+  .sync-pill{
+    display:flex; align-items:center; gap:7px; background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.16); padding:6px 13px 6px 10px; border-radius:30px; font-size:.78rem;
+  }
+  .sync-dot{width:7px; height:7px; border-radius:50%; background:#4ade80; display:inline-block; box-shadow:0 0 0 3px rgba(74,222,128,.22);}
+
+  nav{
+    display:flex; gap:4px; padding:8px 16px; background:var(--paper); border-bottom:1px solid var(--line);
+    flex-wrap:wrap; position:sticky; top:0; z-index:20; box-shadow:0 1px 0 rgba(19,36,73,.03);
+  }
   nav button{
-    border:none; background:transparent; padding:9px 16px; font-size:.92rem; font-weight:bold;
-    color:var(--navy); cursor:pointer; border-radius:8px 8px 0 0;
+    border:none; background:transparent; padding:9px 15px; font-size:.9rem; font-weight:700;
+    font-family:var(--font-body); color:var(--grey); cursor:pointer; border-radius:var(--r-sm);
+    transition:color .15s, background .15s;
   }
+  nav button:hover{color:var(--navy); background:var(--cream);}
   nav button.active{background:var(--navy); color:#fff;}
-  main{padding:18px; max-width:1400px; margin:0 auto;}
+
+  main{padding:20px 18px 40px; max-width:1400px; margin:0 auto;}
   .hidden{display:none !important;}
-  .card{background:#fff; border-radius:12px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); border:1px solid var(--line);}
+
+  .card{background:var(--paper); border-radius:var(--r-md); padding:18px; box-shadow:var(--shadow-sm); border:1px solid var(--line);}
   .grid{display:grid; gap:14px;}
-  .grid.teams{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));}
-  .team-card{background:#fff; border-radius:14px; padding:16px; border:1px solid var(--line); box-shadow:0 1px 6px rgba(0,0,0,.07); position:relative; overflow:hidden;}
-  .team-card h3{margin:0 0 4px; color:var(--navy); font-size:1.15rem;}
-  .team-card .meta{font-size:.72rem; color:var(--grey); margin-bottom:10px; min-height:14px;}
-  .purse{font-size:1.5rem; font-weight:bold; color:var(--green);}
+  .grid.teams{grid-template-columns:repeat(auto-fit,minmax(250px,1fr));}
+
+  .team-card{
+    background:var(--paper); border-radius:var(--r-md); padding:18px; border:1px solid var(--line);
+    box-shadow:var(--shadow-sm); position:relative; overflow:hidden; cursor:pointer;
+    transition:box-shadow .18s ease, transform .18s ease, border-color .18s ease;
+  }
+  .team-card::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg,var(--gold),var(--gold-light));
+  }
+  .team-card:hover{box-shadow:var(--shadow-md); transform:translateY(-2px); border-color:var(--gold-light);}
+  .team-card:active{transform:translateY(0) scale(.99);}
+  .team-card h3{margin:6px 0 2px; color:var(--navy); font-size:1.35rem; font-weight:700; letter-spacing:.2px;}
+  .team-card .meta{font-size:.74rem; color:var(--grey); margin-bottom:12px; min-height:14px; font-weight:600;}
+
+  .purse-row{display:flex; justify-content:space-between; align-items:flex-end; gap:10px;}
+  .purse-label{font-size:.68rem; color:var(--grey); text-transform:uppercase; letter-spacing:1px; font-weight:700;}
+  .purse{font-family:var(--font-display); font-size:1.9rem; font-weight:700; color:var(--green); line-height:1;}
   .purse.low{color:var(--red);}
-  .purse-label{font-size:.72rem; color:var(--grey); text-transform:uppercase; letter-spacing:.5px;}
-  .bar{height:8px; background:#eee; border-radius:4px; margin:8px 0 10px; overflow:hidden;}
-  .bar > div{height:100%; background:var(--gold); transition:width .3s;}
-  .cat-badges{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;}
-  .badge{font-size:.68rem; padding:2px 8px; border-radius:20px; background:var(--cream); border:1px solid var(--line); color:#444;}
-  .players-bought{font-size:.82rem; max-height:160px; overflow-y:auto;}
-  .players-bought div{padding:3px 0; border-bottom:1px dashed var(--line); display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
-  .players-bought .p-left{display:flex; align-items:baseline; gap:6px; min-width:0;}
-  .players-bought .p-cat{flex:0 0 auto; font-size:.66rem; font-weight:bold; color:var(--navy); background:var(--cream); border:1px solid var(--line); padding:1px 6px; border-radius:10px; white-space:nowrap;}
-  .players-bought .p-name{font-weight:bold; overflow-wrap:anywhere;}
-  .players-bought .p-price{color:var(--green); font-weight:bold; white-space:nowrap;}
-  .team-card-actions{display:flex; gap:6px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line);}
-  .team-card-actions button{flex:1; padding:7px 6px; font-size:.72rem; border-radius:7px;}
-  .team-card{cursor:pointer; transition:box-shadow .15s, transform .15s;}
-  .team-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.14);}
-  .team-card:active{transform:scale(.99);}
+  .squad-count{font-family:var(--font-display); font-size:1.5rem; font-weight:700; color:var(--navy); line-height:1;}
+  .bar{height:7px; background:var(--line-soft); border-radius:20px; margin:10px 0 12px; overflow:hidden;}
+  .bar > div{height:100%; background:linear-gradient(90deg,var(--gold-dark),var(--gold)); transition:width .35s ease; border-radius:20px;}
+
+  .cat-badges{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:.66rem; padding:3px 10px; border-radius:20px; background:var(--cream); border:1px solid var(--line); color:var(--ink); font-weight:700;}
+
+  .players-bought{font-size:.85rem; max-height:170px; overflow-y:auto;}
+  .players-bought div{padding:6px 0; border-bottom:1px dashed var(--line); display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
+  .players-bought div:last-child{border-bottom:none;}
+  .players-bought .p-left{display:flex; align-items:baseline; gap:7px; min-width:0;}
+  .players-bought .p-cat{
+    flex:0 0 auto; font-size:.63rem; font-weight:800; color:#fff; padding:2px 7px; border-radius:6px;
+    white-space:nowrap; letter-spacing:.2px;
+  }
+  .players-bought .p-name{font-weight:700; overflow-wrap:anywhere; color:var(--ink);}
+  .players-bought .p-price{color:var(--green); font-weight:800; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .players-bought .empty-row{color:var(--grey-light); font-style:italic; font-weight:500;}
+
+  .cat-bhagat{background:var(--cat-bhagat);}
+  .cat-bat{background:var(--cat-bat);}
+  .cat-bowl{background:var(--cat-bowl);}
+  .cat-ar{background:var(--cat-ar);}
+  td.cat-bhagat, td.cat-bat, td.cat-bowl, td.cat-ar{background:none; color:inherit; font-weight:700;}
+  td.cat-bhagat{color:var(--cat-bhagat);} td.cat-bat{color:var(--cat-bat);}
+  td.cat-bowl{color:var(--cat-bowl);} td.cat-ar{color:var(--cat-ar);}
+
   .print-only{display:none;}
   @media print{
     body *{visibility:hidden;}
@@ -58,97 +128,138 @@
     #printArea{display:block; position:absolute; top:0; left:0; width:100%; margin:0; padding:0;}
     .print-card{page-break-after:always; padding:24px;}
     .print-card:last-child{page-break-after:auto;}
-    .print-card h2{color:#1a2e5c; margin:0 0 2px;}
+    .print-card h2{color:#132449; margin:0 0 2px; font-family:Arial, sans-serif;}
     .print-card .print-meta{color:#6b7280; font-size:.85rem; margin-bottom:14px;}
     .print-card table{width:100%; border-collapse:collapse; font-size:.95rem;}
     .print-card th, .print-card td{padding:8px 10px; border-bottom:1px solid #e2e2e2; text-align:left;}
-    .print-card th{background:#1a2e5c; color:#fff;}
+    .print-card th{background:#132449; color:#fff;}
     .print-card .print-summary{display:flex; gap:24px; margin-bottom:14px; font-size:.95rem;}
   }
+
   .now-bidding{
-    background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--navy-dark);
-    border-radius:14px; padding:22px; text-align:center; margin-bottom:18px; box-shadow:0 2px 10px rgba(0,0,0,.15);
+    position:relative; overflow:hidden;
+    background:
+      radial-gradient(600px 220px at 85% -20%, rgba(255,255,255,.35), transparent 60%),
+      linear-gradient(135deg,var(--gold),var(--gold-dark));
+    color:var(--navy-dark); border-radius:var(--r-lg); padding:30px 24px; text-align:center; margin-bottom:18px;
+    box-shadow:var(--shadow-gold); border:1px solid rgba(255,255,255,.4);
   }
-  .now-bidding .lbl{font-size:.85rem; letter-spacing:2px; font-weight:bold; opacity:.75;}
-  .now-bidding .nm{font-size:2.2rem; font-weight:bold; margin:4px 0;}
-  .now-bidding .ct{font-size:1rem; font-weight:bold;}
+  .now-bidding .lbl{font-size:.8rem; letter-spacing:3px; font-weight:800; opacity:.65; font-family:var(--font-display);}
+  .now-bidding .nm{font-family:var(--font-display); font-size:2.8rem; font-weight:700; margin:4px 0; line-height:1.05;}
+  .now-bidding .ct{font-size:1rem; font-weight:700; display:inline-block; background:rgba(255,255,255,.35); padding:3px 14px; border-radius:20px;}
+  .now-bidding.empty{background:linear-gradient(135deg,var(--navy-mid),var(--navy)); color:#fff; box-shadow:var(--shadow-md);}
+  .now-bidding.empty .lbl{opacity:.55;}
+  .now-bidding.empty .nm{opacity:.85; font-size:1.5rem;}
+
   .row{display:flex; gap:14px; flex-wrap:wrap;}
   .col{flex:1; min-width:260px;}
-  label{display:block; font-size:.78rem; font-weight:bold; color:var(--navy); margin:10px 0 4px;}
+  label{display:block; font-size:.75rem; font-weight:700; color:var(--navy); margin:12px 0 5px; letter-spacing:.2px;}
   input[type=text], input[type=number], select{
-    width:100%; padding:9px 10px; border:1px solid #ccc; border-radius:8px; font-size:.95rem; font-family:inherit;
+    width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:var(--r-sm); font-size:.95rem;
+    font-family:inherit; background:var(--paper); color:var(--ink); transition:border-color .15s, box-shadow .15s;
   }
+  input[type=text]:focus, input[type=number]:focus, select:focus{
+    outline:none; border-color:var(--gold-dark); box-shadow:0 0 0 3px rgba(198,150,62,.18);
+  }
+
   button.btn{
-    border:none; border-radius:8px; padding:11px 18px; font-weight:bold; cursor:pointer; font-size:.92rem;
+    border:none; border-radius:var(--r-sm); padding:11px 20px; font-weight:700; cursor:pointer; font-size:.9rem;
+    font-family:var(--font-body); transition:filter .15s, transform .1s, box-shadow .15s; letter-spacing:.2px;
   }
-  .btn-primary{background:var(--navy); color:#fff;}
-  .btn-primary:hover{background:var(--navy-dark);}
-  .btn-success{background:var(--green); color:#fff;}
+  button.btn:active:not(:disabled){transform:translateY(1px);}
+  .btn-primary{background:var(--navy); color:#fff; box-shadow:0 2px 8px rgba(19,36,73,.25);}
+  .btn-primary:hover{filter:brightness(1.15);}
+  .btn-success{background:var(--green); color:#fff; box-shadow:0 2px 8px rgba(30,138,84,.28);}
+  .btn-success:hover{filter:brightness(1.1);}
   .btn-danger{background:var(--red); color:#fff;}
-  .btn-outline{background:#fff; border:1px solid var(--navy); color:var(--navy);}
-  .btn:disabled{opacity:.45; cursor:not-allowed;}
+  .btn-danger:hover{filter:brightness(1.1);}
+  .btn-outline{background:var(--paper); border:1.5px solid var(--navy); color:var(--navy);}
+  .btn-outline:hover{background:var(--navy); color:#fff;}
+  .btn:disabled{opacity:.4; cursor:not-allowed; filter:none; box-shadow:none;}
+
   .search-box{position:relative;}
   .search-results{
-    position:absolute; z-index:10; background:#fff; border:1px solid var(--line); border-radius:8px;
-    max-height:260px; overflow-y:auto; width:100%; box-shadow:0 4px 14px rgba(0,0,0,.15); margin-top:2px;
+    position:absolute; z-index:10; background:var(--paper); border:1px solid var(--line); border-radius:var(--r-sm);
+    max-height:260px; overflow-y:auto; width:100%; box-shadow:var(--shadow-md); margin-top:4px;
   }
-  .search-results div{padding:8px 10px; cursor:pointer; font-size:.88rem; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between;}
+  .search-results div{
+    padding:9px 12px; cursor:pointer; font-size:.88rem; border-bottom:1px solid var(--line-soft);
+    display:flex; justify-content:space-between; align-items:center; border-left:3px solid transparent;
+  }
+  .search-results div:last-child{border-bottom:none;}
   .search-results div:hover{background:var(--cream);}
-  .search-results div.highlighted{background:var(--gold-light); color:var(--navy-dark);}
-  .search-results .cat-tag{font-size:.68rem; color:var(--grey);}
+  .search-results div.highlighted{background:var(--gold-light); border-left-color:var(--gold-dark);}
+  .search-results .cat-tag{font-size:.68rem; color:var(--grey); font-weight:700;}
   .selected-player{
-    background:var(--cream); border:1px dashed var(--gold); border-radius:10px; padding:12px; margin-top:8px;
+    background:var(--cream); border:1.5px dashed var(--gold-dark); border-radius:var(--r-sm); padding:13px; margin-top:8px;
   }
-  .selected-player .nm{font-weight:bold; font-size:1.05rem; color:var(--navy);}
-  .selected-player .ct{font-size:.8rem; color:var(--grey);}
-  .warn{color:var(--red); font-size:.82rem; margin-top:6px; font-weight:bold;}
+  .selected-player .nm{font-weight:700; font-size:1.1rem; color:var(--navy); font-family:var(--font-display);}
+  .selected-player .ct{font-size:.8rem; color:var(--grey); font-weight:600;}
+  .warn{color:var(--red); font-size:.82rem; margin-top:6px; font-weight:700;}
+
   table{width:100%; border-collapse:collapse; font-size:.88rem;}
-  th, td{padding:8px 10px; border-bottom:1px solid var(--line); text-align:left;}
-  th{background:var(--navy); color:#fff; position:sticky; top:0;}
+  th, td{padding:10px 12px; border-bottom:1px solid var(--line-soft); text-align:left;}
+  th{background:var(--navy); color:#fff; position:sticky; top:0; font-weight:700; font-size:.78rem; letter-spacing:.3px;}
   th.sortable-th{cursor:pointer; user-select:none; white-space:nowrap;}
   th.sortable-th:hover{background:var(--navy-dark);}
   .sort-arrow{display:inline-block; margin-left:4px; font-size:.75em; opacity:.85;}
-  tr:hover td{background:#fafafa;}
-  .status-sold{color:var(--red); font-weight:bold;}
-  .status-avail{color:var(--green); font-weight:bold;}
-  .table-wrap{max-height:520px; overflow-y:auto; border-radius:10px; border:1px solid var(--line);}
+  tbody tr:nth-child(even) td{background:rgba(19,36,73,.015);}
+  tr:hover td{background:var(--cream) !important;}
+  .status-sold{color:var(--red); font-weight:700;}
+  .status-avail{color:var(--green); font-weight:700;}
+  .table-wrap{max-height:520px; overflow-y:auto; border-radius:var(--r-md); border:1px solid var(--line);}
+
   .filters{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center;}
-  .pill{padding:6px 14px; border-radius:20px; border:1px solid var(--line); background:#fff; cursor:pointer; font-size:.82rem; font-weight:bold; color:#444;}
+  .pill{padding:7px 15px; border-radius:20px; border:1.5px solid var(--line); background:var(--paper); cursor:pointer; font-size:.8rem; font-weight:700; color:var(--grey); transition:all .15s;}
+  .pill:hover{border-color:var(--gold-dark);}
   .pill.active{background:var(--navy); color:#fff; border-color:var(--navy);}
-  .log-item{display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--line); font-size:.85rem;}
-  .log-item .team{color:var(--navy); font-weight:bold;}
-  .footer-note{font-size:.75rem; color:var(--grey); text-align:center; margin-top:20px;}
-  .sync-dot{width:8px; height:8px; border-radius:50%; background:#4ade80; display:inline-block; margin-right:6px;}
+  .pill[data-filter="Bhagat"].active{background:var(--cat-bhagat); border-color:var(--cat-bhagat);}
+  .pill[data-filter="Batsman"].active{background:var(--cat-bat); border-color:var(--cat-bat);}
+  .pill[data-filter="Bowler"].active{background:var(--cat-bowl); border-color:var(--cat-bowl);}
+  .pill[data-filter="All Rounder"].active{background:var(--cat-ar); border-color:var(--cat-ar);}
+
+  .log-item{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px dashed var(--line); font-size:.85rem;}
+  .log-item .team{color:var(--navy); font-weight:700;}
+  .footer-note{font-size:.75rem; color:var(--grey-light); text-align:center; margin-top:24px; font-weight:600;}
+
   .toast{
-    position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff;
-    padding:10px 20px; border-radius:8px; font-size:.85rem; box-shadow:0 4px 14px rgba(0,0,0,.25); z-index:50;
-    opacity:0; transition:opacity .25s;
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(6px); background:var(--navy); color:#fff;
+    padding:11px 22px; border-radius:30px; font-size:.85rem; font-weight:600; box-shadow:var(--shadow-md); z-index:50;
+    opacity:0; transition:opacity .25s, transform .25s; pointer-events:none;
   }
-  .toast.show{opacity:1;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .team-card-actions{display:flex; gap:6px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line);}
+  .team-card-actions button{flex:1; padding:7px 6px; font-size:.72rem; border-radius:var(--r-sm);}
+
   @media (max-width:640px){
-    header{padding:14px 16px;} header h1{font-size:1.05rem;}
-    .now-bidding .nm{font-size:1.5rem;}
+    header{padding:16px 16px 14px;} header h1{font-size:1.2rem;}
+    .now-bidding{padding:22px 16px;} .now-bidding .nm{font-size:1.9rem;}
+    main{padding:14px 12px 32px;}
   }
 </style>
 </head>
 <body>
 
 <header>
-  <div>
-    <h1>🏏 ANAND PREMIER LEAGUE 2026</h1>
-    <div class="sub">Live Auction Control</div>
+  <div class="brand">
+    <div class="crest">🏏</div>
+    <div>
+      <h1>Anand Premier League 2026</h1>
+      <div class="sub">Live Auction Control</div>
+    </div>
   </div>
-  <div class="sub"><span class="sync-dot"></span><span id="syncLabel">ready</span></div>
+  <div class="sync-pill"><span class="sync-dot"></span><span id="syncLabel">ready</span></div>
 </header>
 
 <nav>
-  <button class="tab-btn active" data-tab="board">Live Board</button>
-  <button class="tab-btn" data-tab="auctioneer">Auctioneer</button>
-  <button class="tab-btn" data-tab="players">Player List</button>
-  <button class="tab-btn" data-tab="stats">Bid Stats</button>
-  <button class="tab-btn" data-tab="soldorder">Sold Order</button>
-  <button class="tab-btn" data-tab="setup">Setup</button>
-  <button class="tab-btn" data-tab="data">Import/Export</button>
+  <button class="tab-btn active" data-tab="board">🏟️ Live Board</button>
+  <button class="tab-btn" data-tab="auctioneer">🔨 Auctioneer</button>
+  <button class="tab-btn" data-tab="players">📋 Player List</button>
+  <button class="tab-btn" data-tab="stats">📊 Bid Stats</button>
+  <button class="tab-btn" data-tab="soldorder">💰 Sold Order</button>
+  <button class="tab-btn" data-tab="setup">⚙️ Setup</button>
+  <button class="tab-btn" data-tab="data">⇄ Import/Export</button>
 </nav>
 
 <main>
@@ -511,7 +622,15 @@ function renderAll(){
 
 function renderNowBidding(){
   const box = document.getElementById('nowBiddingBox');
-  if(!currentLot){ box.innerHTML = ''; return; }
+  if(!currentLot){
+    box.innerHTML = `
+      <div class="now-bidding empty">
+        <div class="lbl">NOW BIDDING</div>
+        <div class="nm">No player on the block</div>
+        <div class="ct">Pick one from the Auctioneer tab to start the next lot</div>
+      </div>`;
+    return;
+  }
   box.innerHTML = `
     <div class="now-bidding">
       <div class="lbl">NOW BIDDING</div>
@@ -529,28 +648,28 @@ function renderBoard(){
     const metaLine = [meta.mentor, meta.captain].filter(Boolean).join(' · ');
     const low = s.left < 0;
     const playersHtml = s.rows.length
-      ? s.rows.map(r => `<div><span class="p-left"><span class="p-cat">${escapeHtml(catAbbr(r.category))}</span><span class="p-name">${escapeHtml(r.name)}${r.preDecided ? ` <span style="color:var(--grey);font-weight:normal;">(${escapeHtml(r.role || 'Pre-decided')})</span>` : ''}</span></span><span class="p-price">₹${Number(r.price).toLocaleString('en-IN')}</span></div>`).join('')
-      : `<div style="color:#aaa;">No players yet</div>`;
+      ? s.rows.map(r => `<div><span class="p-left"><span class="p-cat ${catClass(r.category)}">${escapeHtml(catAbbr(r.category))}</span><span class="p-name">${escapeHtml(r.name)}${r.preDecided ? ` <span style="color:var(--grey);font-weight:normal;">(${escapeHtml(r.role || 'Pre-decided')})</span>` : ''}</span></span><span class="p-price">₹${Number(r.price).toLocaleString('en-IN')}</span></div>`).join('')
+      : `<div class="empty-row">No players yet</div>`;
     return `
       <div class="team-card" data-team="${escapeHtml(team)}">
         <h3>${escapeHtml(team)}</h3>
         <div class="meta">${escapeHtml(metaLine || ' ')}</div>
-        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+        <div class="purse-row">
           <div>
             <div class="purse-label">Purse Left</div>
             <div class="purse ${low?'low':''}">₹${s.left.toLocaleString('en-IN')}</div>
           </div>
           <div style="text-align:right;">
             <div class="purse-label">Squad</div>
-            <div style="font-weight:bold; font-size:1.1rem; color:${s.full?'var(--red)':'var(--navy)'};">${s.count} / ${maxPlayersPerTeam}${s.full ? ' FULL' : ''}</div>
+            <div class="squad-count" style="color:${s.full?'var(--red)':'var(--navy)'};">${s.count} / ${maxPlayersPerTeam}${s.full ? ' FULL' : ''}</div>
           </div>
         </div>
-        <div class="bar"><div style="width:${pct}%; background:${low?'var(--red)':'var(--gold)'};"></div></div>
+        <div class="bar"><div style="width:${pct}%; background:${low?'var(--red)':'linear-gradient(90deg,var(--gold-dark),var(--gold))'};"></div></div>
         <div class="cat-badges">
-          <span class="badge">Bhagat: ${s.cats['Bhagat']}</span>
-          <span class="badge">Bat: ${s.cats['Batsman']}</span>
-          <span class="badge">Bowl: ${s.cats['Bowler']}</span>
-          <span class="badge">AR: ${s.cats['All Rounder']}</span>
+          <span class="badge" style="color:var(--cat-bhagat);">Bhagat: ${s.cats['Bhagat']}</span>
+          <span class="badge" style="color:var(--cat-bat);">Bat: ${s.cats['Batsman']}</span>
+          <span class="badge" style="color:var(--cat-bowl);">Bowl: ${s.cats['Bowler']}</span>
+          <span class="badge" style="color:var(--cat-ar);">AR: ${s.cats['All Rounder']}</span>
         </div>
         <div class="players-bought">${playersHtml}</div>
       </div>`;
@@ -627,7 +746,7 @@ function renderPlayerTable(){
     const s = sm[p.name];
     return `<tr>
       <td>${escapeHtml(p.name)}</td>
-      <td>${escapeHtml(p.category)}</td>
+      <td class="${catClass(p.category)}">${escapeHtml(p.category)}</td>
       <td class="${s?'status-sold':'status-avail'}">${s?'Sold':'Available'}</td>
       <td>${s ? escapeHtml(s.team) : '-'}</td>
       <td>${s ? '₹'+Number(s.price).toLocaleString('en-IN') : '-'}</td>
@@ -668,7 +787,7 @@ function renderSoldOrder(){
     <tr>
       <td>${i+1}</td>
       <td>${escapeHtml(r.name)}${r.preDecided ? ` <span style="color:var(--grey);font-size:.75rem;">(${escapeHtml(r.role || 'Pre-decided')})</span>` : ''}</td>
-      <td>${escapeHtml(r.category)}</td>
+      <td class="${catClass(r.category)}">${escapeHtml(r.category)}</td>
       <td>${escapeHtml(r.team)}</td>
       <td style="font-weight:bold; color:var(--green);">₹${Number(r.price).toLocaleString('en-IN')}</td>
       <td><button class="btn btn-outline edit-sold-price" data-idx="${realIdx}" style="padding:4px 10px;font-size:.75rem;">Edit</button></td>
@@ -721,7 +840,7 @@ function renderPreDecideList(){
         <td>${escapeHtml(r.team)}</td>
         <td>${escapeHtml(r.role || '-')}</td>
         <td>${escapeHtml(r.name)}</td>
-        <td>${escapeHtml(r.category)}</td>
+        <td class="${catClass(r.category)}">${escapeHtml(r.category)}</td>
         <td>₹${Number(r.price).toLocaleString('en-IN')}</td>
         <td><button class="btn btn-outline remove-predecide" data-idx="${r.idx}" style="padding:4px 10px;font-size:.75rem;">Remove</button></td>
       </tr>`).join('') +
@@ -769,6 +888,12 @@ function escapeHtml(str){
 }
 function catAbbr(category){
   return { 'Bhagat':'Bhagat', 'Batsman':'Bat', 'Bowler':'Bowl', 'All Rounder':'AR' }[category] || category;
+}
+function catClass(category){
+  return { 'Bhagat':'cat-bhagat', 'Batsman':'cat-bat', 'Bowler':'cat-bowl', 'All Rounder':'cat-ar' }[category] || '';
+}
+function catColorVar(category){
+  return { 'Bhagat':'var(--cat-bhagat)', 'Batsman':'var(--cat-bat)', 'Bowler':'var(--cat-bowl)', 'All Rounder':'var(--cat-ar)' }[category] || 'var(--grey)';
 }
 
 // ---------- Team card: print & share ----------
@@ -958,7 +1083,7 @@ playerSearch.addEventListener('input', () => {
     searchResults.innerHTML = '<div style="color:#aaa;">No available player matches.</div>';
   } else {
     searchResults.innerHTML = avail.map(p =>
-      `<div data-name="${escapeHtml(p.name)}"><span>${escapeHtml(p.name)}</span><span class="cat-tag">${escapeHtml(p.category)}</span></div>`
+      `<div data-name="${escapeHtml(p.name)}"><span>${escapeHtml(p.name)}</span><span class="cat-tag" style="color:${catColorVar(p.category)};">${escapeHtml(p.category)}</span></div>`
     ).join('');
   }
   searchResults.classList.remove('hidden');
@@ -973,7 +1098,7 @@ searchResults.addEventListener('click', (e) => {
   document.getElementById('selectedPlayerBox').innerHTML = `
     <div class="selected-player">
       <div class="nm">${escapeHtml(p.name)}</div>
-      <div class="ct">${escapeHtml(p.category)}</div>
+      <div class="ct" style="color:${catColorVar(p.category)};">${escapeHtml(p.category)}</div>
     </div>`;
   updateSaleButtons();
 });
@@ -1181,7 +1306,7 @@ preDecideSearch.addEventListener('input', () => {
   const avail = availablePlayers().filter(p => p.name.toLowerCase().includes(q)).slice(0, 30);
   preDecideResults.innerHTML = avail.length === 0
     ? '<div style="color:#aaa;">No available player matches.</div>'
-    : avail.map(p => `<div data-name="${escapeHtml(p.name)}"><span>${escapeHtml(p.name)}</span><span class="cat-tag">${escapeHtml(p.category)}</span></div>`).join('');
+    : avail.map(p => `<div data-name="${escapeHtml(p.name)}"><span>${escapeHtml(p.name)}</span><span class="cat-tag" style="color:${catColorVar(p.category)};">${escapeHtml(p.category)}</span></div>`).join('');
   preDecideResults.classList.remove('hidden');
 });
 preDecideResults.addEventListener('click', (e) => {
@@ -1194,7 +1319,7 @@ preDecideResults.addEventListener('click', (e) => {
   document.getElementById('preDecideSelectedBox').innerHTML = `
     <div class="selected-player">
       <div class="nm">${escapeHtml(p.name)}</div>
-      <div class="ct">${escapeHtml(p.category)}</div>
+      <div class="ct" style="color:${catColorVar(p.category)};">${escapeHtml(p.category)}</div>
     </div>`;
   updatePreDecideButton();
 });
