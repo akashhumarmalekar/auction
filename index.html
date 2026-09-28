@@ -320,10 +320,7 @@
         <div class="pill active" data-filter="All">All</div>
         <div class="pill" data-filter="Available">Available</div>
         <div class="pill" data-filter="Sold">Sold</div>
-        <div class="pill" data-filter="Bhagat">Bhagat</div>
-        <div class="pill" data-filter="Batsman">Batsman</div>
-        <div class="pill" data-filter="Bowler">Bowler</div>
-        <div class="pill" data-filter="All Rounder">All Rounder</div>
+        <span id="catFilterPills" style="display:contents;"></span>
       </div>
       <div class="table-wrap">
         <table>
@@ -458,7 +455,7 @@
       <h3 style="margin-top:0;color:var(--navy)">Import Player Master List</h3>
       <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">
         Excel file with columns <b>Name</b>, <b>Category</b>, and optionally <b>Mobile</b>, <b>Followup</b>.
-        Category should be one of: Bhagat, Batsman, Bowler, All Rounder.
+        Category can be anything: Bhagat, Batsman, Bowler, All Rounder, or a new one (e.g. Special) &mdash; new categories are created on the site automatically.
       </p>
       <label style="margin-top:0;">Mode</label>
       <select id="playerImportMode">
@@ -590,11 +587,12 @@ function availablePlayers(){
 function teamSummary(team){
   const rows = soldPlayers.filter(s => s.team === team);
   const spent = rows.reduce((a,b) => a + Number(b.price||0), 0);
-  const cats = {'Bhagat':0,'Batsman':0,'Bowler':0,'All Rounder':0};
-  rows.forEach(r => { if(cats[r.category] !== undefined) cats[r.category]++; });
+  const cats = {};
+  getAllCategories().forEach(c => { cats[c] = 0; });
+  rows.forEach(r => { const c = canonCat(r.category); if(cats[c] !== undefined) cats[c]++; });
   const meta = teamMeta[team] || {};
-  if(meta.mentor && cats[meta.mentorCategory] !== undefined) cats[meta.mentorCategory]++;
-  if(meta.captain && cats[meta.captainCategory] !== undefined) cats[meta.captainCategory]++;
+  if(meta.mentor && cats[canonCat(meta.mentorCategory)] !== undefined) cats[canonCat(meta.mentorCategory)]++;
+  if(meta.captain && cats[canonCat(meta.captainCategory)] !== undefined) cats[canonCat(meta.captainCategory)]++;
   const count = rows.length;
   const full = count >= maxPlayersPerTeam;
   return { rows, spent, left: pursePerTeam - spent, cats, count, slotsLeft: Math.max(0, maxPlayersPerTeam - count), full };
@@ -615,6 +613,8 @@ function bidStats(team){
 
 // ---------- Rendering ----------
 function renderAll(){
+  syncCategoryStyles();
+  renderCategoryPills();
   renderBoard();
   renderTeamSelect();
   renderPreDecideTeamSelect();
@@ -664,10 +664,7 @@ function renderBoard(){
         </div>
         <div class="bar"><div style="width:${pct}%; background:${low?'var(--red)':'linear-gradient(90deg,var(--gold-dark),var(--gold))'};"></div></div>
         <div class="cat-badges">
-          <span class="badge" style="color:var(--cat-bhagat);">Bhagat: ${s.cats['Bhagat']}</span>
-          <span class="badge" style="color:var(--cat-bat);">Bat: ${s.cats['Batsman']}</span>
-          <span class="badge" style="color:var(--cat-bowl);">Bowl: ${s.cats['Bowler']}</span>
-          <span class="badge" style="color:var(--cat-ar);">AR: ${s.cats['All Rounder']}</span>
+          ${Object.keys(s.cats).map(c => `<span class="badge" style="color:${catColorVar(c)};">${escapeHtml(catAbbr(c))}: ${s.cats[c]}</span>`).join('')}
         </div>
         <div class="players-bought">${playersHtml}</div>
       </div>`;
@@ -715,7 +712,7 @@ function renderPlayerTable(){
   let rows = MASTER_PLAYERS.filter(p => p.name.toLowerCase().includes(searchVal));
   if(playerListFilter === 'Available') rows = rows.filter(p => !sm[p.name]);
   else if(playerListFilter === 'Sold') rows = rows.filter(p => sm[p.name]);
-  else if(['Bhagat','Batsman','Bowler','All Rounder'].includes(playerListFilter)) rows = rows.filter(p => p.category === playerListFilter);
+  else if(playerListFilter !== 'All') rows = rows.filter(p => catKey(p.category) === catKey(playerListFilter));
 
   const { key, dir } = playerListSort;
   const sortVal = (p) => {
@@ -774,10 +771,10 @@ function renderStats(){
 function renderTopSold(){
   const grid = document.getElementById('topSoldGrid');
   if(!grid) return;
-  const categories = ['Bhagat', 'Batsman', 'Bowler', 'All Rounder'];
+  const categories = getAllCategories();
   grid.innerHTML = categories.map(cat => {
     const top5 = soldPlayers
-      .filter(r => r.category === cat)
+      .filter(r => catKey(r.category) === catKey(cat))
       .slice()
       .sort((a, b) => Number(b.price) - Number(a.price))
       .slice(0, 5);
@@ -824,7 +821,7 @@ function renderSoldOrder(){
 
 function renderSetup(){
   const grid = document.getElementById('setupGrid');
-  const catOptions = (selected) => ['', 'Bhagat', 'Batsman', 'Bowler', 'All Rounder']
+  const catOptions = (selected) => [''].concat(getAllCategories())
     .map(c => `<option value="${c}" ${c === (selected||'') ? 'selected' : ''}>${c || 'No category'}</option>`).join('');
   grid.innerHTML = TEAM_NAMES.map(t => {
     const m = teamMeta[t] || {};
@@ -919,14 +916,82 @@ function updatePreDecideButton(){
 function escapeHtml(str){
   return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+// ---------- Dynamic categories ----------
+// The four base categories always exist. Any other category found in the
+// player list, sold list, or mentor/captain setup is added automatically.
+const BASE_CATEGORIES = ['Bhagat','Batsman','Bowler','All Rounder'];
+const BASE_CAT_ABBR  = { 'Bhagat':'Bhagat', 'Batsman':'Bat', 'Bowler':'Bowl', 'All Rounder':'AR' };
+const BASE_CAT_CLASS = { 'Bhagat':'cat-bhagat', 'Batsman':'cat-bat', 'Bowler':'cat-bowl', 'All Rounder':'cat-ar' };
+const BASE_CAT_COLOR = { 'Bhagat':'var(--cat-bhagat)', 'Batsman':'var(--cat-bat)', 'Bowler':'var(--cat-bowl)', 'All Rounder':'var(--cat-ar)' };
+const EXTRA_CAT_COLORS = ['#c0392b','#d35400','#0e8a8a','#c2185b','#455a64','#6b8e23','#8e24aa','#00695c'];
+let CAT_LIST = BASE_CATEGORIES.slice();
+
+function catKey(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+function getAllCategories(){
+  const list = BASE_CATEGORIES.slice();
+  const seen = new Set(list.map(catKey));
+  const add = (c) => {
+    const cleaned = String(c || '').trim().replace(/\s+/g, ' ');
+    const k = catKey(cleaned);
+    if(!k || seen.has(k)) return;
+    seen.add(k); list.push(cleaned);
+  };
+  MASTER_PLAYERS.forEach(p => add(p.category));
+  soldPlayers.forEach(s => add(s.category));
+  Object.values(teamMeta || {}).forEach(m => { add(m && m.mentorCategory); add(m && m.captainCategory); });
+  return list;
+}
+function canonCat(c){
+  const k = catKey(c);
+  return getAllCategories().find(x => catKey(x) === k) || c;
+}
+function catIndex(c){
+  const k = catKey(c);
+  let i = CAT_LIST.findIndex(x => catKey(x) === k);
+  if(i < 0){ CAT_LIST = getAllCategories(); i = CAT_LIST.findIndex(x => catKey(x) === k); }
+  return i;
+}
 function catAbbr(category){
-  return { 'Bhagat':'Bhagat', 'Batsman':'Bat', 'Bowler':'Bowl', 'All Rounder':'AR' }[category] || category;
+  return BASE_CAT_ABBR[category] || category;
 }
 function catClass(category){
-  return { 'Bhagat':'cat-bhagat', 'Batsman':'cat-bat', 'Bowler':'cat-bowl', 'All Rounder':'cat-ar' }[category] || '';
+  if(BASE_CAT_CLASS[category]) return BASE_CAT_CLASS[category];
+  const k = catKey(category);
+  return k ? 'cat-x-' + k : '';
 }
 function catColorVar(category){
-  return { 'Bhagat':'var(--cat-bhagat)', 'Batsman':'var(--cat-bat)', 'Bowler':'var(--cat-bowl)', 'All Rounder':'var(--cat-ar)' }[category] || 'var(--grey)';
+  if(BASE_CAT_COLOR[category]) return BASE_CAT_COLOR[category];
+  const i = catIndex(category);
+  if(i < BASE_CATEGORIES.length) return 'var(--grey)';
+  return EXTRA_CAT_COLORS[(i - BASE_CATEGORIES.length) % EXTRA_CAT_COLORS.length];
+}
+function syncCategoryStyles(){
+  CAT_LIST = getAllCategories();
+  let el = document.getElementById('dynCatStyles');
+  if(!el){ el = document.createElement('style'); el.id = 'dynCatStyles'; document.head.appendChild(el); }
+  el.textContent = CAT_LIST.filter(c => !BASE_CAT_CLASS[c]).map(c => {
+    const cls = catClass(c), col = catColorVar(c);
+    return `.${cls}{background:${col};} td.${cls}{background:none; color:${col}; font-weight:700;}`;
+  }).join('\n');
+}
+function renderCategoryPills(){
+  const box = document.getElementById('catFilterPills');
+  if(!box) return;
+  const cats = getAllCategories();
+  if(!['All','Available','Sold'].includes(playerListFilter) && !cats.some(c => catKey(c) === catKey(playerListFilter))) playerListFilter = 'All';
+  box.innerHTML = cats.map(c => `<div class="pill" data-filter="${escapeHtml(c)}" data-cat="1">${escapeHtml(c)}</div>`).join('');
+  syncFilterPills();
+}
+function syncFilterPills(){
+  document.querySelectorAll('#tab-players .filters .pill').forEach(x => {
+    const on = x.dataset.filter === playerListFilter;
+    x.classList.toggle('active', on);
+    if(x.dataset.cat){
+      const col = catColorVar(x.dataset.filter);
+      x.style.background = on ? col : '';
+      x.style.borderColor = on ? col : '';
+    }
+  });
 }
 function metaPersonLabel(name, category){
   if(!name) return '';
@@ -1228,13 +1293,12 @@ document.querySelectorAll('.sortable-th').forEach(th => {
     renderPlayerTable();
   });
 });
-document.querySelectorAll('.pill').forEach(p => {
-  p.addEventListener('click', () => {
-    document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
-    p.classList.add('active');
-    playerListFilter = p.dataset.filter;
-    renderPlayerTable();
-  });
+document.querySelector('#tab-players .filters').addEventListener('click', (ev) => {
+  const p = ev.target.closest('.pill');
+  if(!p) return;
+  playerListFilter = p.dataset.filter;
+  syncFilterPills();
+  renderPlayerTable();
 });
 
 // ---------- Setup tab ----------
@@ -1442,7 +1506,6 @@ function getField(row, ...names){
   }
   return '';
 }
-const VALID_CATEGORIES = ['Bhagat','Batsman','Bowler','All Rounder'];
 
 function readExcelFile(file){
   return new Promise((resolve, reject) => {
@@ -1509,14 +1572,27 @@ document.getElementById('playerImportFile').addEventListener('change', async (e)
     const rows = await readExcelFile(file);
     const parsed = [];
     const errors = [];
+    const known = getAllCategories();   // categories already on the site
+    const newCats = [];                  // categories created by this import
+    const resolveCategory = (raw) => {
+      const cleaned = String(raw || '').trim().replace(/\s+/g, ' ');
+      const k = catKey(cleaned);
+      if(!k) return '';
+      const hit = known.find(c => catKey(c) === k);
+      if(hit) return hit;
+      let nm = cleaned;
+      if(nm === nm.toLowerCase() || nm === nm.toUpperCase()) nm = nm.toLowerCase().replace(/\b\w/g, m => m.toUpperCase());
+      known.push(nm); newCats.push(nm);
+      return nm;
+    };
     rows.forEach((row, i) => {
       const name = getField(row, 'Name', 'Player', 'Player Name');
-      const category = getField(row, 'Category');
+      const category = resolveCategory(getField(row, 'Category'));
       const mobile = getField(row, 'Mobile', 'Mobile Number', 'Phone');
       const followup = getField(row, 'Followup', 'Follow-up', 'Follow Up');
       if(!name){ return; } // skip fully blank rows
-      if(!VALID_CATEGORIES.includes(category)){
-        errors.push(`Row ${i+2}: "${name}" has invalid/missing category "${category}"`);
+      if(!category){
+        errors.push(`Row ${i+2}: "${name}" has a missing category`);
         return;
       }
       parsed.push({ name, category, mobile, followup });
@@ -1546,7 +1622,8 @@ document.getElementById('playerImportFile').addEventListener('change', async (e)
 
     persistAndRender();
     let msg = `Imported ${parsed.length} player row(s).`;
-    if(errors.length) msg += ` Skipped ${errors.length} row(s) with issues.`;
+    if(newCats.length) msg += ` New categor${newCats.length > 1 ? 'ies' : 'y'} created: ${newCats.join(', ')}.`;
+    if(errors.length) msg += ` Skipped ${errors.length} row(s) with issues: ${errors.slice(0,5).join('; ')}${errors.length > 5 ? '; …' : ''}`;
     statusEl.innerHTML = `<span style="color:var(--green);">${escapeHtml(msg)}</span>`;
     showToast('Player list updated');
   }catch(err){
