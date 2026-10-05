@@ -229,6 +229,17 @@
 
   .cat-set-input{max-width:150px;}
 
+  /* "Now bidding" banner (Live Board) */
+  .now-bid{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:18px; margin-bottom:18px; padding:22px 28px;
+    border-radius:var(--r-lg); color:#fff; border:2px solid var(--gold); box-shadow:var(--shadow-gold);
+    background:radial-gradient(800px 200px at 10% -30%, rgba(198,150,62,.35), transparent 60%), linear-gradient(120deg,var(--navy),var(--navy-dark));}
+  .now-bid .nb-tag{font-size:.78rem; letter-spacing:2px; font-weight:800; color:var(--gold-light);}
+  .now-bid .nb-name{font-family:var(--font-display); font-size:clamp(2rem,5vw,3.6rem); font-weight:800; text-transform:uppercase; line-height:1.05; margin:4px 0 8px;}
+  .now-bid .nb-cat{display:inline-block; padding:3px 12px; border-radius:20px; font-size:.8rem; font-weight:800;}
+  .now-bid .nb-right{text-align:right;}
+  .now-bid .nb-amt{font-family:var(--font-display); font-size:clamp(2.6rem,7vw,5rem); font-weight:800; color:var(--gold-light); line-height:1;}
+  .now-bid .nb-sub{font-size:.8rem; opacity:.75; margin-top:4px;}
+
   table{width:100%; border-collapse:collapse; font-size:.88rem;}
   th, td{padding:10px 12px; border-bottom:1px solid var(--line-soft); text-align:left;}
   th{background:var(--navy); color:#fff; position:sticky; top:0; font-weight:700; font-size:.78rem; letter-spacing:.3px;}
@@ -299,6 +310,7 @@
 
   <!-- LIVE BOARD -->
   <section id="tab-board">
+    <div id="nowBidding"></div>
     <div class="grid teams" id="teamGrid"></div>
   </section>
 
@@ -579,10 +591,12 @@ let playerListSort = { key: 'name', dir: 1 }; // dir: 1 = ascending, -1 = descen
 // window on the laptop screen, one dragged onto the projector's display).
 const STORAGE_KEY = 'apl_auction_state_v1';
 let saveTimer = null;
+let lastSeenRaw = null;
 
 function readStorage(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
+    lastSeenRaw = raw;
     return raw ? JSON.parse(raw) : null;
   }catch(e){
     console.error('Could not read saved auction state:', e);
@@ -593,7 +607,9 @@ function readStorage(){
 function writeStorage(){
   try{
     const payload = { soldPlayers, currentLot, teamMeta, pursePerTeam, maxPlayersPerTeam, TEAM_NAMES, MASTER_PLAYERS, categorySettings, auctionCategory, tournamentName };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    const rawOut = JSON.stringify(payload);
+    localStorage.setItem(STORAGE_KEY, rawOut);
+    lastSeenRaw = rawOut;
     setSyncLabel('saved ' + new Date().toLocaleTimeString());
     return true;
   }catch(e){
@@ -643,6 +659,15 @@ window.addEventListener('storage', (e) => {
     setSyncLabel('synced from another window');
   }
 });
+
+// Fallback for browsers that don't deliver 'storage' events between file:// windows:
+// check once a second whether another window changed the saved state.
+setInterval(() => {
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw !== lastSeenRaw){ loadState(); setSyncLabel('synced from another window'); }
+  }catch(e){}
+}, 500);
 
 // ---------- Derived data ----------
 function soldMap(){
@@ -844,7 +869,32 @@ function updateQuotaSummary(){
   }
 }
 
+function renderNowBidding(){
+  const el = document.getElementById('nowBidding');
+  if(!el) return;
+  if(!currentLot){
+    el.innerHTML = `<div class="now-bid"><div><div class="nb-tag">🔨 AUCTION</div><div class="nb-name" style="font-size:clamp(1.4rem,3vw,2.2rem);opacity:.85;">Waiting for the next player…</div></div></div>`;
+    return;
+  }
+  const st = getCatSetting(currentLot.category);
+  const bid = Number(currentLot.bid ?? st.base);
+  el.innerHTML = `
+    <div class="now-bid">
+      <div>
+        <div class="nb-tag">🔨 NOW BIDDING</div>
+        <div class="nb-name">${escapeHtml(currentLot.name)}</div>
+        <span class="nb-cat" style="background:${catColorVar(currentLot.category)};">${escapeHtml(currentLot.category)}</span>
+      </div>
+      <div class="nb-right">
+        <div class="nb-tag">CURRENT BID</div>
+        <div class="nb-amt">₹${bid.toLocaleString('en-IN')}</div>
+        <div class="nb-sub">Base ₹${st.base.toLocaleString('en-IN')} · +₹${st.inc.toLocaleString('en-IN')} per bid</div>
+      </div>
+    </div>`;
+}
+
 function renderBoard(){
+  renderNowBidding();
   const grid = document.getElementById('teamGrid');
   grid.innerHTML = TEAM_NAMES.map(team => {
     const s = teamSummary(team);
@@ -1497,6 +1547,7 @@ document.getElementById('priceInput').addEventListener('input', () => {
   if(currentLot && v !== '' && !isNaN(Number(v)) && Number(v) >= 0){
     currentLot.bid = Number(v);
     writeStorage();
+    renderNowBidding();
     const amt = document.querySelector('#bidBox .amt');
     if(amt) amt.textContent = '₹' + Number(v).toLocaleString('en-IN');
   }
