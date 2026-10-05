@@ -71,12 +71,12 @@
 
   /* Live Board is a clean display: tab bar hidden, a faint menu button brings it back */
   body.board-mode nav{display:none;}
+  body.board-mode .footer-note{display:none;}
   body.board-mode.nav-peek nav{display:flex;}
-  #menuFab{display:none; position:fixed; top:8px; right:10px; z-index:40; width:34px; height:34px; border-radius:50%;
+  #menuFab{display:none; position:fixed; bottom:14px; right:14px; z-index:40; width:34px; height:34px; border-radius:50%;
     border:1px solid var(--line); background:var(--paper); color:var(--navy); font-size:1.05rem; cursor:pointer; opacity:.35; transition:opacity .2s;}
   #menuFab:hover{opacity:1;}
   body.board-mode #menuFab{display:block;}
-  body.board-mode.nav-peek #menuFab{top:auto; bottom:14px; right:14px;}
 
   main{padding:20px 18px 40px; max-width:1400px; margin:0 auto;}
   .hidden{display:none !important;}
@@ -276,7 +276,7 @@
   <div class="brand">
     <div class="crest">🏏</div>
     <div>
-      <h1>Anand Premier League 2026</h1>
+      <h1 id="tournamentTitle">Anand Premier League 2026</h1>
       <div class="sub">Live Auction Control</div>
     </div>
   </div>
@@ -299,9 +299,6 @@
 
   <!-- LIVE BOARD -->
   <section id="tab-board">
-    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-      <button class="btn btn-outline" id="printAllTeamsBtn">🖨 Print All Squads</button>
-    </div>
     <div class="grid teams" id="teamGrid"></div>
   </section>
 
@@ -412,6 +409,13 @@
   <!-- SETUP -->
   <section id="tab-setup" class="hidden">
     <div class="card">
+      <h3 style="margin-top:0;color:var(--navy)">Tournament Name</h3>
+      <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">Shown in the page header, printed squad cards, shared squad text and the export file name.</p>
+      <input type="text" id="tournamentNameInput" maxlength="60" style="max-width:420px;">
+      <button class="btn btn-primary" id="saveTournamentNameBtn" style="margin-top:10px;">Save</button>
+    </div>
+
+    <div class="card">
       <h3 style="margin-top:0;color:var(--navy)">Team Names</h3>
       <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">
         Rename, add, or remove teams. Existing sold players, purses and mentor/captain info move with a renamed team automatically.
@@ -495,6 +499,12 @@
   <!-- IMPORT / EXPORT -->
   <section id="tab-data" class="hidden">
     <div class="card">
+      <h3 style="margin-top:0;color:var(--navy)">Print Squads</h3>
+      <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">Print a card for every team's squad.</p>
+      <button class="btn btn-outline" id="printAllTeamsBtn">🖨 Print All Squads</button>
+    </div>
+
+    <div class="card">
       <h3 style="margin-top:0;color:var(--navy)">Export to Excel</h3>
       <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">
         Downloads one workbook with sheets for Player List, Sold Order, Team Summary and Settings (purse, squad limit, team names).
@@ -531,7 +541,7 @@
     </div>
   </section>
 
-  <div class="footer-note">Anand Premier League 2026 · Saved automatically in this browser · Open a second window of this same file on this computer (e.g. dragged to the projector display) to see it update live</div>
+  <div class="footer-note"><span id="footerTournament">Anand Premier League 2026</span> · Saved automatically in this browser · Open a second window of this same file on this computer (e.g. dragged to the projector display) to see it update live</div>
 </main>
 
 <div class="toast" id="toast"></div>
@@ -554,6 +564,7 @@ let pursePerTeam = DEFAULT_PURSE;
 let maxPlayersPerTeam = DEFAULT_MAX_PLAYERS;
 let selectedPlayerForSale = null;
 let categorySettings = {}; // {catKey: {base, inc, max}}  (max = null → no limit)
+let tournamentName = 'Anand Premier League 2026';
 let auctionCategory = '';  // category currently being auctioned
 const DEFAULT_BASE_PRICE = 500;
 const DEFAULT_BID_INCREMENT = 100;
@@ -581,7 +592,7 @@ function readStorage(){
 
 function writeStorage(){
   try{
-    const payload = { soldPlayers, currentLot, teamMeta, pursePerTeam, maxPlayersPerTeam, TEAM_NAMES, MASTER_PLAYERS, categorySettings, auctionCategory };
+    const payload = { soldPlayers, currentLot, teamMeta, pursePerTeam, maxPlayersPerTeam, TEAM_NAMES, MASTER_PLAYERS, categorySettings, auctionCategory, tournamentName };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     setSyncLabel('saved ' + new Date().toLocaleTimeString());
     return true;
@@ -610,6 +621,7 @@ function loadState(){
     MASTER_PLAYERS = (data.MASTER_PLAYERS && data.MASTER_PLAYERS.length) ? data.MASTER_PLAYERS : DEFAULT_MASTER_PLAYERS.slice();
     categorySettings = data.categorySettings || {};
     auctionCategory = data.auctionCategory || '';
+    tournamentName = data.tournamentName || 'Anand Premier League 2026';
     selectedPlayerForSale = currentLot ? (MASTER_PLAYERS.find(p => p.name === currentLot.name) || null) : null;
   }
   renderAll();
@@ -707,7 +719,17 @@ function drawRandomPlayer(){
 }
 
 // ---------- Rendering ----------
+function applyTournamentName(){
+  const n = tournamentName || 'Auction';
+  document.getElementById('tournamentTitle').textContent = n;
+  document.getElementById('footerTournament').textContent = n;
+  document.title = n + ' — Live Auction';
+  const inp = document.getElementById('tournamentNameInput');
+  if(inp && document.activeElement !== inp) inp.value = tournamentName;
+}
+
 function renderAll(){
+  applyTournamentName();
   syncCategoryStyles();
   renderAuctioneer();
   renderCatSettings();
@@ -1222,7 +1244,7 @@ function teamPrintCardHTML(team){
   return `
     <div class="print-card">
       <h2>🏏 ${escapeHtml(team)}</h2>
-      <div class="print-meta">Anand Premier League 2026${metaLine ? ' · ' + escapeHtml(metaLine) : ''}</div>
+      <div class="print-meta">${escapeHtml(tournamentName)}${metaLine ? ' · ' + escapeHtml(metaLine) : ''}</div>
       <div class="print-summary">
         <div><b>Purse Left:</b> ₹${s.left.toLocaleString('en-IN')} / ₹${pursePerTeam.toLocaleString('en-IN')}</div>
         <div><b>Squad:</b> ${s.count} / ${maxPlayersPerTeam}</div>
@@ -1244,7 +1266,7 @@ function teamShareText(team){
   const s = teamSummary(team);
   const m = teamMeta[team] || {};
   const lines = [];
-  lines.push(`🏏 *${team}* — Anand Premier League 2026`);
+  lines.push(`🏏 *${team}* — ${tournamentName}`);
   if(m.mentor) lines.push(`Mentor: ${metaPersonLabel(m.mentor, m.mentorCategory)}`);
   if(m.captain) lines.push(`Captain: ${metaPersonLabel(m.captain, m.captainCategory)}`);
   lines.push(`Purse Left: ₹${s.left.toLocaleString('en-IN')} / ₹${pursePerTeam.toLocaleString('en-IN')}`);
@@ -1303,7 +1325,7 @@ async function shareTeamCardAsImage(team){
 
       if(navigator.canShare && navigator.canShare({ files: [file] })){
         try{
-          await navigator.share({ files: [file], title: `${team} — Squad`, text: `${team} squad — Anand Premier League 2026` });
+          await navigator.share({ files: [file], title: `${team} — Squad`, text: `${team} squad — ${tournamentName}` });
         }catch(err){
           if(err.name !== 'AbortError') showToast('Share cancelled');
         }
@@ -1678,6 +1700,17 @@ document.getElementById('saveCatSettingsBtn').addEventListener('click', () => {
   showToast('Category settings saved');
 });
 
+document.getElementById('saveTournamentNameBtn').addEventListener('click', () => {
+  const v = document.getElementById('tournamentNameInput').value.trim().replace(/\s+/g,' ');
+  if(!v){ showToast('Tournament name cannot be blank'); return; }
+  tournamentName = v;
+  persistAndRender();
+  showToast('Tournament name updated');
+});
+document.getElementById('tournamentNameInput').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('saveTournamentNameBtn').click(); }
+});
+
 document.getElementById('saveMaxPlayersBtn').addEventListener('click', () => {
   const v = Number(document.getElementById('maxPlayersInput').value);
   if(v > 0){
@@ -1856,7 +1889,7 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(soldOrderSheet), 'Sold Order');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(teamSummarySheet), 'Team Summary');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(settingsSheet), 'Settings');
-  XLSX.writeFile(wb, `APL_2026_Auction_${new Date().toISOString().slice(0,10)}.xlsx`);
+  XLSX.writeFile(wb, `${(tournamentName || 'Auction').replace(/[^A-Za-z0-9]+/g,'_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
   showToast('Excel exported');
 });
 
