@@ -200,6 +200,36 @@
   .selected-player .ct{font-size:.8rem; color:var(--grey); font-weight:600;}
   .warn{color:var(--red); font-size:.82rem; margin-top:6px; font-weight:700;}
 
+  /* category picker + bid controls (Auctioneer) */
+  .cat-btns{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:4px;}
+  .cat-btn{padding:9px 16px; border-radius:12px; border:2px solid var(--cc,var(--navy)); background:var(--paper); color:var(--cc,var(--navy));
+    font:inherit; font-weight:800; font-size:.9rem; cursor:pointer; transition:all .15s;}
+  .cat-btn .n{font-weight:600; font-size:.72rem; opacity:.8; margin-left:4px;}
+  .cat-btn:hover:not(:disabled){background:var(--cc,var(--navy)); color:#fff;}
+  .cat-btn.active{background:var(--cc,var(--navy)); color:#fff; box-shadow:0 4px 12px rgba(0,0,0,.18);}
+  .cat-btn:disabled{opacity:.35; cursor:not-allowed;}
+  .bid-box{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-top:12px; padding:14px 16px;
+    border-radius:var(--r-md); background:linear-gradient(120deg,var(--navy),var(--navy-dark)); color:#fff; border-bottom:3px solid var(--gold);}
+  .bid-box .lbl{font-size:.68rem; letter-spacing:1.5px; font-weight:800; color:var(--gold-light);}
+  .bid-box .amt{font-family:var(--font-display); font-size:2.6rem; font-weight:800; line-height:1;}
+  .bid-box .sub{font-size:.72rem; opacity:.7; margin-top:3px;}
+  .bid-actions{display:flex; flex-direction:column; gap:6px; flex:1; min-width:170px;}
+  .bid-actions .bid-up{font-size:1.15rem; padding:14px; width:100%;}
+  .bid-actions .mini{display:flex; gap:6px;}
+  .bid-actions .mini .btn{flex:1; padding:6px; font-size:.75rem;}
+
+  /* "Now bidding" banner (Live Board) */
+  .now-bid{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:18px; margin-bottom:18px; padding:22px 28px;
+    border-radius:var(--r-lg); color:#fff; border:2px solid var(--gold); box-shadow:var(--shadow-gold);
+    background:radial-gradient(800px 200px at 10% -30%, rgba(198,150,62,.35), transparent 60%), linear-gradient(120deg,var(--navy),var(--navy-dark));}
+  .now-bid .nb-tag{font-size:.78rem; letter-spacing:2px; font-weight:800; color:var(--gold-light);}
+  .now-bid .nb-name{font-family:var(--font-display); font-size:clamp(2rem,5vw,3.6rem); font-weight:800; text-transform:uppercase; line-height:1.05; margin:4px 0 8px;}
+  .now-bid .nb-cat{display:inline-block; padding:3px 12px; border-radius:20px; font-size:.8rem; font-weight:800;}
+  .now-bid .nb-right{text-align:right;}
+  .now-bid .nb-amt{font-family:var(--font-display); font-size:clamp(2.6rem,7vw,5rem); font-weight:800; color:var(--gold-light); line-height:1;}
+  .now-bid .nb-sub{font-size:.8rem; opacity:.75; margin-top:4px;}
+  .cat-set-input{max-width:150px;}
+
   table{width:100%; border-collapse:collapse; font-size:.88rem;}
   th, td{padding:10px 12px; border-bottom:1px solid var(--line-soft); text-align:left;}
   th{background:var(--navy); color:#fff; position:sticky; top:0; font-weight:700; font-size:.78rem; letter-spacing:.3px;}
@@ -268,6 +298,7 @@
 
   <!-- LIVE BOARD -->
   <section id="tab-board">
+    <div id="nowBidding"></div>
     <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
       <button class="btn btn-outline" id="printAllTeamsBtn">🖨 Print All Squads</button>
     </div>
@@ -278,13 +309,16 @@
   <section id="tab-auctioneer" class="hidden">
     <div class="row">
       <div class="col card">
-        <h3 style="margin-top:0;color:var(--navy)">1. Pick a Player</h3>
+        <h3 style="margin-top:0;color:var(--navy)">1. Select Category</h3>
+        <div id="auctionCatPills" class="cat-btns"></div>
+        <div id="selectedPlayerBox"></div>
+        <div id="bidBox"></div>
+        <button class="btn btn-outline" id="drawNextBtn" style="margin-top:12px;width:100%;" disabled>🎲 Skip — draw another random player</button>
+        <label>Or search for a specific player</label>
         <div class="search-box">
           <input type="text" id="playerSearch" placeholder="Type a player name to search available players...">
           <div class="search-results hidden" id="searchResults"></div>
         </div>
-        <div id="selectedPlayerBox"></div>
-        <button class="btn btn-outline" id="setLotBtn" style="margin-top:12px;" disabled>Show on Live Board (Now Bidding)</button>
       </div>
 
       <div class="col card">
@@ -398,6 +432,23 @@
     </div>
 
     <div class="card" style="margin-top:16px;">
+      <h3 style="margin-top:0;color:var(--navy)">Category Settings — Base Price, Bid Increment &amp; Team Quota</h3>
+      <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">
+        <b>Base price</b> is where bidding starts for a player of that category. <b>Increment</b> is how much the bid goes up each time you press the Bid button.
+        <b>Max per team</b> is how many players of that category each team must/can buy at the auction (leave blank for no limit).
+        Pre-decided players don't count toward these quotas.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Category</th><th>Base Price (₹)</th><th>Bid Increment (₹)</th><th>Max players per team</th></tr></thead>
+          <tbody id="catSettingsBody"></tbody>
+        </table>
+      </div>
+      <div id="quotaSummary" style="margin-top:12px;font-size:.88rem;font-weight:600;"></div>
+      <button class="btn btn-primary" id="saveCatSettingsBtn" style="margin-top:12px;">Save Category Settings</button>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
       <h3 style="margin-top:0;color:var(--navy)">Pre-Decide Players</h3>
       <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">
         Assign players to a team directly, before the auction starts (e.g. 2 fixed players per team).
@@ -502,6 +553,10 @@ let teamMeta = {};      // {teamName: {mentor, captain}}
 let pursePerTeam = DEFAULT_PURSE;
 let maxPlayersPerTeam = DEFAULT_MAX_PLAYERS;
 let selectedPlayerForSale = null;
+let categorySettings = {}; // {catKey: {base, inc, max}}  (max = null → no limit)
+let auctionCategory = '';  // category currently being auctioned
+const DEFAULT_BASE_PRICE = 500;
+const DEFAULT_BID_INCREMENT = 100;
 let selectedPlayerForPreDecide = null;
 let playerListFilter = 'All';
 let playerListSort = { key: 'name', dir: 1 }; // dir: 1 = ascending, -1 = descending
@@ -526,7 +581,7 @@ function readStorage(){
 
 function writeStorage(){
   try{
-    const payload = { soldPlayers, currentLot, teamMeta, pursePerTeam, maxPlayersPerTeam, TEAM_NAMES, MASTER_PLAYERS };
+    const payload = { soldPlayers, currentLot, teamMeta, pursePerTeam, maxPlayersPerTeam, TEAM_NAMES, MASTER_PLAYERS, categorySettings, auctionCategory };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     setSyncLabel('saved ' + new Date().toLocaleTimeString());
     return true;
@@ -553,6 +608,9 @@ function loadState(){
     maxPlayersPerTeam = data.maxPlayersPerTeam || DEFAULT_MAX_PLAYERS;
     TEAM_NAMES = (data.TEAM_NAMES && data.TEAM_NAMES.length) ? data.TEAM_NAMES : DEFAULT_TEAM_NAMES.slice();
     MASTER_PLAYERS = (data.MASTER_PLAYERS && data.MASTER_PLAYERS.length) ? data.MASTER_PLAYERS : DEFAULT_MASTER_PLAYERS.slice();
+    categorySettings = data.categorySettings || {};
+    auctionCategory = data.auctionCategory || '';
+    selectedPlayerForSale = currentLot ? (MASTER_PLAYERS.find(p => p.name === currentLot.name) || null) : null;
   }
   renderAll();
 }
@@ -611,9 +669,48 @@ function bidStats(team){
   return { highest, lowest, avg };
 }
 
+// ---------- Category settings / auction helpers ----------
+function getCatSetting(cat){
+  const s = categorySettings[catKey(cat)] || {};
+  const num = v => (v === undefined || v === null || v === '' || isNaN(Number(v))) ? null : Number(v);
+  const base = num(s.base), inc = num(s.inc), max = num(s.max);
+  return {
+    base: base === null ? DEFAULT_BASE_PRICE : base,
+    inc:  inc  === null ? DEFAULT_BID_INCREMENT : inc,
+    max:  max
+  };
+}
+// auctioned players only — pre-decided picks don't count toward category quotas
+function teamCatCount(team, cat){
+  return soldPlayers.filter(s => s.team === team && !s.preDecided && catKey(s.category) === catKey(cat)).length;
+}
+function maxPreDecided(){
+  return TEAM_NAMES.reduce((m, t) => Math.max(m, soldPlayers.filter(s => s.team === t && s.preDecided).length), 0);
+}
+function availableInCategory(cat){
+  return availablePlayers().filter(p => catKey(p.category) === catKey(cat));
+}
+function startLot(p){
+  selectedPlayerForSale = p;
+  currentLot = { name: p.name, category: p.category, bid: getCatSetting(p.category).base };
+}
+// Picks a random available player from the chosen category and puts them on the Live Board.
+function drawRandomPlayer(){
+  if(!auctionCategory) return null;
+  const pool = availableInCategory(auctionCategory);
+  if(pool.length === 0){ selectedPlayerForSale = null; currentLot = null; return null; }
+  let candidates = pool;
+  if(selectedPlayerForSale && pool.length > 1) candidates = pool.filter(p => p.name !== selectedPlayerForSale.name);
+  const p = candidates[Math.floor(Math.random() * candidates.length)];
+  startLot(p);
+  return p;
+}
+
 // ---------- Rendering ----------
 function renderAll(){
   syncCategoryStyles();
+  renderAuctioneer();
+  renderCatSettings();
   renderCategoryPills();
   renderBoard();
   renderTeamSelect();
@@ -630,7 +727,124 @@ function renderAll(){
   updatePreDecideButton();
 }
 
+function renderAuctioneer(){
+  // If the player on the block got sold (e.g. from another window / import), drop the selection.
+  if(selectedPlayerForSale && soldMap()[selectedPlayerForSale.name]){
+    if(currentLot && currentLot.name === selectedPlayerForSale.name) currentLot = null;
+    selectedPlayerForSale = null;
+  }
+
+  document.getElementById('auctionCatPills').innerHTML = getAllCategories().map(c => {
+    const n = availableInCategory(c).length;
+    const on = auctionCategory && catKey(c) === catKey(auctionCategory);
+    return `<button class="cat-btn ${on ? 'active' : ''}" data-cat="${escapeHtml(c)}" style="--cc:${catColorVar(c)};" ${n === 0 ? 'disabled' : ''}>${escapeHtml(c)}<span class="n">${n} left</span></button>`;
+  }).join('');
+
+  const box = document.getElementById('selectedPlayerBox');
+  if(selectedPlayerForSale){
+    const p = selectedPlayerForSale;
+    box.innerHTML = `
+      <div class="selected-player">
+        <div class="nm">${escapeHtml(p.name)}</div>
+        <div class="ct" style="color:${catColorVar(p.category)};">${escapeHtml(p.category)}</div>
+      </div>`;
+  } else if(auctionCategory){
+    box.innerHTML = `<div class="selected-player"><div class="ct">No available ${escapeHtml(auctionCategory)} players left 🎉 — pick another category.</div></div>`;
+  } else {
+    box.innerHTML = `<div class="selected-player"><div class="ct">Pick a category above — a random player from it will be selected for you.</div></div>`;
+  }
+
+  const bidBox = document.getElementById('bidBox');
+  const pi = document.getElementById('priceInput');
+  if(currentLot){
+    const st = getCatSetting(currentLot.category);
+    const bid = Number(currentLot.bid ?? st.base);
+    bidBox.innerHTML = `
+      <div class="bid-box">
+        <div>
+          <div class="lbl">CURRENT BID</div>
+          <div class="amt">₹${bid.toLocaleString('en-IN')}</div>
+          <div class="sub">Base ₹${st.base.toLocaleString('en-IN')} · Increment ₹${st.inc.toLocaleString('en-IN')}</div>
+        </div>
+        <div class="bid-actions">
+          <button class="btn btn-success bid-up" data-act="up">➕ Bid +₹${st.inc.toLocaleString('en-IN')}</button>
+          <div class="mini">
+            <button class="btn btn-outline" data-act="down">− Step back</button>
+            <button class="btn btn-outline" data-act="reset">Reset to base</button>
+          </div>
+        </div>
+      </div>`;
+    if(document.activeElement !== pi) pi.value = String(bid);
+  } else {
+    bidBox.innerHTML = '';
+  }
+
+  const drawBtn = document.getElementById('drawNextBtn');
+  const poolSize = auctionCategory ? availableInCategory(auctionCategory).length : 0;
+  drawBtn.disabled = !(poolSize > 1 || (poolSize === 1 && !selectedPlayerForSale));
+}
+
+function renderNowBidding(){
+  const el = document.getElementById('nowBidding');
+  if(!el) return;
+  if(!currentLot){ el.innerHTML = ''; return; }
+  const st = getCatSetting(currentLot.category);
+  const bid = Number(currentLot.bid ?? st.base);
+  el.innerHTML = `
+    <div class="now-bid">
+      <div>
+        <div class="nb-tag">🔨 NOW BIDDING</div>
+        <div class="nb-name">${escapeHtml(currentLot.name)}</div>
+        <span class="nb-cat" style="background:${catColorVar(currentLot.category)};">${escapeHtml(currentLot.category)}</span>
+      </div>
+      <div class="nb-right">
+        <div class="nb-tag">CURRENT BID</div>
+        <div class="nb-amt">₹${bid.toLocaleString('en-IN')}</div>
+        <div class="nb-sub">Base ₹${st.base.toLocaleString('en-IN')} · +₹${st.inc.toLocaleString('en-IN')} per bid</div>
+      </div>
+    </div>`;
+}
+
+function renderCatSettings(){
+  const body = document.getElementById('catSettingsBody');
+  if(!body) return;
+  body.innerHTML = getAllCategories().map(c => {
+    const st = getCatSetting(c);
+    const ce = escapeHtml(c);
+    return `<tr>
+      <td><b style="color:${catColorVar(c)};">${ce}</b></td>
+      <td><input type="number" min="0" step="50" class="cat-set-input" data-cat="${ce}" data-field="base" value="${st.base}"></td>
+      <td><input type="number" min="0" step="50" class="cat-set-input" data-cat="${ce}" data-field="inc" value="${st.inc}"></td>
+      <td><input type="number" min="0" step="1" class="cat-set-input" data-cat="${ce}" data-field="max" value="${st.max === null ? '' : st.max}" placeholder="no limit"></td>
+    </tr>`;
+  }).join('');
+  updateQuotaSummary();
+}
+
+function updateQuotaSummary(){
+  const el = document.getElementById('quotaSummary');
+  if(!el) return;
+  let total = 0, any = false;
+  document.querySelectorAll('#catSettingsBody input[data-field="max"]').forEach(i => {
+    if(i.value !== ''){ total += Number(i.value) || 0; any = true; }
+  });
+  const pre = maxPreDecided();
+  const slots = Math.max(0, maxPlayersPerTeam - pre);
+  const base = `Squad limit ${maxPlayersPerTeam} − ${pre} pre-decided = <b>${slots}</b> player(s) each team buys at the auction. Quotas add up to <b>${total}</b>.`;
+  if(!any){
+    el.style.color = 'var(--grey)';
+    el.innerHTML = base + ' No quota set yet.';
+  } else if(total === slots){
+    el.style.color = 'var(--green)';
+    el.innerHTML = '✓ ' + base;
+  } else {
+    el.style.color = '#b45309';
+    el.innerHTML = '⚠ ' + base + ` Adjust the quotas so they add up to ${slots}.`;
+  }
+}
+
 function renderBoard(){
+  renderNowBidding();
   const grid = document.getElementById('teamGrid');
   grid.innerHTML = TEAM_NAMES.map(team => {
     const s = teamSummary(team);
@@ -674,10 +888,18 @@ function renderBoard(){
 function renderTeamSelect(){
   const sel = document.getElementById('teamSelect');
   const current = sel.value;
+  const cat = selectedPlayerForSale ? selectedPlayerForSale.category : null;
+  const lim = cat ? getCatSetting(cat).max : null;
   sel.innerHTML = '<option value="">-- choose team --</option>' + TEAM_NAMES.map(t => {
     const s = teamSummary(t);
-    const label = `${t} (₹${s.left.toLocaleString('en-IN')} left · ${s.count}/${maxPlayersPerTeam}${s.full ? ' FULL':''})`;
-    return `<option value="${escapeHtml(t)}" ${s.full ? 'disabled' : ''}>${escapeHtml(label)}</option>`;
+    let quotaTxt = '', qFull = false;
+    if(cat && lim !== null){
+      const n = teamCatCount(t, cat);
+      qFull = n >= lim;
+      quotaTxt = ` · ${catAbbr(cat)} ${n}/${lim}${qFull ? ' MAX' : ''}`;
+    }
+    const label = `${t} (₹${s.left.toLocaleString('en-IN')} left · ${s.count}/${maxPlayersPerTeam}${s.full ? ' FULL':''}${quotaTxt})`;
+    return `<option value="${escapeHtml(t)}" ${(s.full || qFull) ? 'disabled' : ''}>${escapeHtml(label)}</option>`;
   }).join('');
   if(current) sel.value = current;
 }
@@ -878,23 +1100,31 @@ function renderPreDecideList(){
 }
 
 function updateSaleButtons(){
-  const setLotBtn = document.getElementById('setLotBtn');
   const confirmBtn = document.getElementById('confirmSaleBtn');
-  setLotBtn.disabled = !selectedPlayerForSale;
   const teamVal = document.getElementById('teamSelect').value;
   const priceVal = document.getElementById('priceInput').value;
 
   const warnBox = document.getElementById('purseWarning');
   const squadBox = document.getElementById('squadWarning');
   let blocked = false;
+  let squadMsg = '';
 
   if(teamVal){
     const s = teamSummary(teamVal);
     if(s.full){
-      squadBox.innerHTML = `<div class="warn">⚠ ${escapeHtml(teamVal)} already has ${maxPlayersPerTeam} players — squad is full.</div>`;
+      squadMsg += `<div class="warn">⚠ ${escapeHtml(teamVal)} already has ${maxPlayersPerTeam} players — squad is full.</div>`;
       blocked = true;
-    } else { squadBox.innerHTML = ''; }
-  } else { squadBox.innerHTML = ''; }
+    }
+    if(selectedPlayerForSale){
+      const cat = selectedPlayerForSale.category;
+      const lim = getCatSetting(cat).max;
+      if(lim !== null && teamCatCount(teamVal, cat) >= lim){
+        squadMsg += `<div class="warn">⚠ ${escapeHtml(teamVal)} has already bought its maximum of ${lim} ${escapeHtml(cat)} player(s).</div>`;
+        blocked = true;
+      }
+    }
+  }
+  squadBox.innerHTML = squadMsg;
 
   if(teamVal && priceVal){
     const s = teamSummary(teamVal);
@@ -1195,38 +1425,74 @@ searchResults.addEventListener('click', (e) => {
   const row = e.target.closest('[data-name]');
   if(!row) return;
   const p = MASTER_PLAYERS.find(pp => pp.name === row.dataset.name);
-  selectedPlayerForSale = p;
+  if(!p) return;
   playerSearch.value = '';
   searchResults.classList.add('hidden'); searchResults.innerHTML='';
-  document.getElementById('selectedPlayerBox').innerHTML = `
-    <div class="selected-player">
-      <div class="nm">${escapeHtml(p.name)}</div>
-      <div class="ct" style="color:${catColorVar(p.category)};">${escapeHtml(p.category)}</div>
-    </div>`;
-  updateSaleButtons();
+  auctionCategory = p.category;
+  startLot(p);
+  document.getElementById('teamSelect').value = '';
+  persistAndRender();
 });
 document.addEventListener('click', (e) => {
   if(!e.target.closest('.search-box')) { searchResults.classList.add('hidden'); }
 });
 setupSearchKeyboardNav(playerSearch, searchResults);
 
-document.getElementById('setLotBtn').addEventListener('click', () => {
-  if(!selectedPlayerForSale) return;
-  currentLot = { name: selectedPlayerForSale.name, category: selectedPlayerForSale.category };
+document.getElementById('auctionCatPills').addEventListener('click', (e) => {
+  const b = e.target.closest('.cat-btn');
+  if(!b || b.disabled) return;
+  auctionCategory = b.dataset.cat;
+  selectedPlayerForSale = null;   // fresh draw — don't exclude the previous category's player
+  document.getElementById('teamSelect').value = '';
+  const p = drawRandomPlayer();
   persistAndRender();
-  showToast('Shown on Live Board');
+  if(p) showToast(`${p.name} is up for bidding`);
 });
+
+document.getElementById('drawNextBtn').addEventListener('click', () => {
+  const p = drawRandomPlayer();
+  document.getElementById('teamSelect').value = '';
+  persistAndRender();
+  if(p) showToast(`${p.name} is up for bidding`);
+});
+
+document.getElementById('bidBox').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-act]');
+  if(!b || !currentLot) return;
+  const st = getCatSetting(currentLot.category);
+  let bid = Number(currentLot.bid ?? st.base);
+  if(b.dataset.act === 'up'){
+    if(st.inc <= 0){ showToast('Set a bid increment for this category in Setup'); return; }
+    bid += st.inc;
+  } else if(b.dataset.act === 'down'){
+    bid = Math.max(st.base, bid - st.inc);
+  } else if(b.dataset.act === 'reset'){
+    bid = st.base;
+  }
+  currentLot.bid = bid;
+  persistAndRender();
+});
+
 document.getElementById('clearLotBtn').addEventListener('click', () => {
   selectedPlayerForSale = null;
   currentLot = null;
-  document.getElementById('selectedPlayerBox').innerHTML = '';
   document.getElementById('priceInput').value = '';
   document.getElementById('teamSelect').value = '';
   persistAndRender();
 });
 
 document.getElementById('teamSelect').addEventListener('change', updateSaleButtons);
-document.getElementById('priceInput').addEventListener('input', updateSaleButtons);
+document.getElementById('priceInput').addEventListener('input', () => {
+  const v = document.getElementById('priceInput').value;
+  if(currentLot && v !== '' && !isNaN(Number(v)) && Number(v) >= 0){
+    currentLot.bid = Number(v);
+    writeStorage();
+    renderNowBidding();
+    const amt = document.querySelector('#bidBox .amt');
+    if(amt) amt.textContent = '₹' + Number(v).toLocaleString('en-IN');
+  }
+  updateSaleButtons();
+});
 document.getElementById('priceInput').addEventListener('keydown', (e) => {
   if(e.key === 'Enter'){
     e.preventDefault();
@@ -1246,20 +1512,33 @@ document.getElementById('confirmSaleBtn').addEventListener('click', () => {
     showToast(`${team} squad is already full (${maxPlayersPerTeam} players)`);
     return;
   }
+  {
+    const cat = selectedPlayerForSale.category;
+    const lim = getCatSetting(cat).max;
+    if(lim !== null && teamCatCount(team, cat) >= lim){
+      showToast(`${team} has already bought its max of ${lim} ${cat} player(s)`);
+      return;
+    }
+  }
 
   soldPlayers.push({
     name: selectedPlayerForSale.name,
     category: selectedPlayerForSale.category,
     team, price, ts: Date.now(), preDecided: false
   });
+  const soldName = selectedPlayerForSale.name;
   currentLot = null;
   selectedPlayerForSale = null;
-  document.getElementById('selectedPlayerBox').innerHTML = '';
   document.getElementById('priceInput').value = '';
   document.getElementById('teamSelect').value = '';
 
+  // automatically bring up the next random player from the same category
+  const next = drawRandomPlayer();
+
   const ok = persistAndRender();
-  showToast(ok ? 'Sale recorded ✅' : '⚠ Sale NOT saved — see the warning above');
+  if(!ok) showToast('⚠ Sale NOT saved — see the warning above');
+  else if(next) showToast(`${soldName} sold ✅ — next up: ${next.name}`);
+  else showToast(auctionCategory ? `${soldName} sold ✅ — no more ${auctionCategory} players left` : 'Sale recorded ✅');
 });
 
 document.getElementById('undoBtn').addEventListener('click', () => {
@@ -1276,6 +1555,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   if(!confirm('Really sure? This cannot be undone.')) return;
   soldPlayers = [];
   currentLot = null;
+  selectedPlayerForSale = null;
   persistAndRender();
   showToast('Auction reset');
 });
@@ -1388,6 +1668,27 @@ document.getElementById('savePurseBtn').addEventListener('click', () => {
     persistAndRender();
     showToast('Purse per team updated');
   }
+});
+
+document.getElementById('catSettingsBody').addEventListener('input', updateQuotaSummary);
+document.getElementById('saveCatSettingsBtn').addEventListener('click', () => {
+  const next = {};
+  let bad = null;
+  document.querySelectorAll('#catSettingsBody .cat-set-input').forEach(inp => {
+    const k = catKey(inp.dataset.cat);
+    next[k] = next[k] || {};
+    if(inp.value === ''){
+      if(inp.dataset.field === 'max') next[k].max = null; else bad = inp.dataset.cat;
+      return;
+    }
+    const v = Number(inp.value);
+    if(isNaN(v) || v < 0){ bad = inp.dataset.cat; return; }
+    next[k][inp.dataset.field] = v;
+  });
+  if(bad){ showToast(`Check the values for ${bad}`); return; }
+  categorySettings = next;
+  persistAndRender();
+  showToast('Category settings saved');
 });
 
 document.getElementById('saveMaxPlayersBtn').addEventListener('click', () => {
@@ -1552,7 +1853,15 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
   const settingsSheet = [
     { Setting: 'Purse Per Team', Value: pursePerTeam },
     { Setting: 'Max Players Per Team', Value: maxPlayersPerTeam },
-    ...TEAM_NAMES.map((t, i) => ({ Setting: `Team ${i+1} Name`, Value: t }))
+    ...TEAM_NAMES.map((t, i) => ({ Setting: `Team ${i+1} Name`, Value: t })),
+    ...getAllCategories().flatMap(c => {
+      const st = getCatSetting(c);
+      return [
+        { Setting: `${c} Base Price`, Value: st.base },
+        { Setting: `${c} Bid Increment`, Value: st.inc },
+        { Setting: `${c} Max Per Team`, Value: st.max === null ? '' : st.max }
+      ];
+    })
   ];
 
   const wb = XLSX.utils.book_new();
