@@ -483,6 +483,7 @@
         <ol style="line-height:1.7;">
           <li>Go to <b>console.firebase.google.com</b> → <b>Add project</b> (turn Google Analytics off).</li>
           <li>Left menu → <b>Build → Realtime Database → Create Database</b> → choose <b>Start in test mode</b>.</li>
+          <li>Open the <b>Rules</b> tab, replace everything with <code>{ "rules": { "apl_rooms": { ".read": true, ".write": true } } }</code> and press <b>Publish</b>.</li>
           <li>Copy the database URL shown at the top of the Data tab (starts with <code>https://</code>) and paste it above.</li>
           <li>On the laptop choose <b>Host</b>, pick a room code, press <b>Save &amp; Connect</b>, then press <b>Copy viewer link</b> and open that link on the phone.</li>
         </ol>
@@ -676,7 +677,7 @@ function setSyncLabel(text){
 }
 
 function loadState(){
-  if(isViewer()) return;
+  if(isViewer()){ renderAll(); return; }
   applyData(readStorage());
   renderAll();
 }
@@ -741,6 +742,12 @@ function isViewer(){ return syncReady() && syncCfg.mode === 'viewer'; }
 function isHost(){ return syncReady() && syncCfg.mode === 'host'; }
 function syncBase(){ return syncCfg.url.replace(/\/+$/,'') + '/apl_rooms/' + encodeURIComponent(syncCfg.room); }
 
+function syncErrText(e, who){
+  const m = String((e && e.message) || e);
+  if(/HTTP (401|403)/.test(m)) return '⚠ Firebase Rules are blocking access — see Setup → Live Sync';
+  if(/HTTP 404/.test(m)) return '⚠ Database URL not found — check it in Setup → Live Sync';
+  return '⚠ ' + who + ' can’t reach Firebase (' + m + ')';
+}
 function scheduleCloudPush(){
   if(!isHost()) return;
   clearTimeout(syncPushTimer);
@@ -758,7 +765,7 @@ async function cloudPush(){
     setSyncLabel('☁ shared ' + new Date().toLocaleTimeString());
   }catch(e){
     console.error('Cloud sync failed:', e);
-    setSyncLabel('⚠ cloud sync failed');
+    setSyncLabel(syncErrText(e, 'host'));
   }
 }
 async function viewerPoll(){
@@ -781,7 +788,7 @@ async function viewerPoll(){
     }
   }catch(e){
     console.error('Viewer sync failed:', e);
-    setSyncLabel('⚠ offline — retrying');
+    setSyncLabel(syncErrText(e, 'viewer') + ' · retrying');
   }
   syncPolling = false;
 }
