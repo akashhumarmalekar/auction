@@ -72,6 +72,10 @@
   /* Live Board is a clean display: tab bar hidden, a faint menu button brings it back */
   body.board-mode nav{display:none;}
   body.board-mode .footer-note{display:none;}
+  body.viewer-mode nav, body.viewer-mode #menuFab{display:none !important;}
+  #viewerExit{display:none; text-align:center; margin:18px 0 6px; font-size:.72rem; color:var(--grey-light);}
+  #viewerExit a{color:inherit;}
+  body.viewer-mode #viewerExit{display:block;}
   body.board-mode.nav-peek nav{display:flex;}
   #menuFab{display:none; position:fixed; bottom:14px; right:14px; z-index:40; width:34px; height:34px; border-radius:50%;
     border:1px solid var(--line); background:var(--paper); color:var(--navy); font-size:1.05rem; cursor:pointer; opacity:.35; transition:opacity .2s;}
@@ -448,6 +452,45 @@
     </div>
 
     <div class="card" style="margin-top:16px;">
+      <h3 style="margin-top:0;color:var(--navy)">Live Sync — show the Live Board on other devices</h3>
+      <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">
+        Each device keeps its own data, so a phone can't see your laptop's auction by itself. Turn this on to share it:
+        the <b>Host</b> (the device you run the auction on) publishes to a free Firebase Realtime Database, and every <b>Viewer</b> (phone / TV) follows it live, read-only.
+      </p>
+      <div class="row">
+        <div class="col">
+          <label style="margin-top:0;">This device is</label>
+          <select id="syncModeSelect">
+            <option value="off">Off (this device only)</option>
+            <option value="host">Host — I run the auction here</option>
+            <option value="viewer">Viewer — just show the live board</option>
+          </select>
+          <label>Room code (same on host and viewers)</label>
+          <input type="text" id="syncRoomInput" maxlength="40" placeholder="e.g. apl10">
+        </div>
+        <div class="col">
+          <label style="margin-top:0;">Firebase Database URL</label>
+          <input type="text" id="syncUrlInput" placeholder="https://your-project-default-rtdb.firebaseio.com">
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary" id="syncSaveBtn">Save &amp; Connect</button>
+            <button class="btn btn-outline" id="syncCopyLinkBtn">📋 Copy viewer link</button>
+          </div>
+        </div>
+      </div>
+      <div id="syncStatus" style="margin-top:10px;font-size:.84rem;font-weight:600;"></div>
+      <details style="margin-top:10px;font-size:.82rem;color:var(--grey);">
+        <summary style="cursor:pointer;font-weight:700;color:var(--navy);">One-time Firebase setup (2 minutes, free)</summary>
+        <ol style="line-height:1.7;">
+          <li>Go to <b>console.firebase.google.com</b> → <b>Add project</b> (turn Google Analytics off).</li>
+          <li>Left menu → <b>Build → Realtime Database → Create Database</b> → choose <b>Start in test mode</b>.</li>
+          <li>Copy the database URL shown at the top of the Data tab (starts with <code>https://</code>) and paste it above.</li>
+          <li>On the laptop choose <b>Host</b>, pick a room code, press <b>Save &amp; Connect</b>, then press <b>Copy viewer link</b> and open that link on the phone.</li>
+        </ol>
+        <p>Test mode lets anyone who knows the URL and room code read/write, and expires after 30 days — fine for a one-day event. Share the viewer link only with people you trust.</p>
+      </details>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
       <h3 style="margin-top:0;color:var(--navy)">Category Settings — Base Price, Bid Increment &amp; Team Quota</h3>
       <p style="font-size:.82rem;color:var(--grey);margin-top:-6px;">
         <b>Base price</b> is where bidding starts for a player of that category. <b>Increment</b> is how much the bid goes up each time you press the Bid button.
@@ -556,6 +599,7 @@
   <div class="footer-note"><span id="footerTournament">Anand Premier League 2026</span> · Saved automatically in this browser · Open a second window of this same file on this computer (e.g. dragged to the projector display) to see it update live</div>
 </main>
 
+<div id="viewerExit">Viewer mode — following the host live · <a href="?sync=off">Exit viewer mode</a></div>
 <div class="toast" id="toast"></div>
 <div id="printArea" class="print-only"></div>
 
@@ -604,13 +648,19 @@ function readStorage(){
   }
 }
 
+function buildPayload(){
+  return { soldPlayers, currentLot, teamMeta, pursePerTeam, maxPlayersPerTeam, TEAM_NAMES, MASTER_PLAYERS, categorySettings, auctionCategory, tournamentName };
+}
+
 function writeStorage(){
+  if(isViewer()) return true;   // viewer devices only display; they never save or publish
   try{
-    const payload = { soldPlayers, currentLot, teamMeta, pursePerTeam, maxPlayersPerTeam, TEAM_NAMES, MASTER_PLAYERS, categorySettings, auctionCategory, tournamentName };
+    const payload = buildPayload();
     const rawOut = JSON.stringify(payload);
     localStorage.setItem(STORAGE_KEY, rawOut);
     lastSeenRaw = rawOut;
     setSyncLabel('saved ' + new Date().toLocaleTimeString());
+    scheduleCloudPush();
     return true;
   }catch(e){
     console.error('Could not save auction state:', e);
@@ -626,7 +676,12 @@ function setSyncLabel(text){
 }
 
 function loadState(){
-  const data = readStorage();
+  if(isViewer()) return;
+  applyData(readStorage());
+  renderAll();
+}
+
+function applyData(data){
   if(data){
     soldPlayers = data.soldPlayers || [];
     currentLot = data.currentLot || null;
@@ -640,7 +695,6 @@ function loadState(){
     tournamentName = data.tournamentName || 'Anand Premier League 2026';
     selectedPlayerForSale = currentLot ? (MASTER_PLAYERS.find(p => p.name === currentLot.name) || null) : null;
   }
-  renderAll();
 }
 
 // Every mutation goes through this: update in-memory state, persist, re-render.
@@ -654,7 +708,7 @@ function persistAndRender(){
 // native 'storage' event the instant localStorage changes here — no polling,
 // no delay.
 window.addEventListener('storage', (e) => {
-  if(e.key === STORAGE_KEY){
+  if(e.key === STORAGE_KEY && !isViewer()){
     loadState();
     setSyncLabel('synced from another window');
   }
@@ -663,11 +717,88 @@ window.addEventListener('storage', (e) => {
 // Fallback for browsers that don't deliver 'storage' events between file:// windows:
 // check once a second whether another window changed the saved state.
 setInterval(() => {
+  if(isViewer()) return;
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw !== lastSeenRaw){ loadState(); setSyncLabel('synced from another window'); }
   }catch(e){}
 }, 500);
+
+// ---------- Live Sync across devices (optional) ----------
+// localStorage is private to one browser on one device, so a phone can't see what the laptop
+// is doing. With Live Sync on, the HOST device publishes its state to a free Firebase Realtime
+// Database and VIEWER devices (phones, TVs) follow it read-only.
+const SYNC_CFG_KEY = 'apl_sync_cfg_v1';
+let syncCfg = { url:'', room:'', mode:'off' };
+let syncPushTimer = null, syncPollTimer = null, syncLastRev = null, syncPolling = false;
+
+function loadSyncCfg(){
+  try{ const r = localStorage.getItem(SYNC_CFG_KEY); if(r) syncCfg = Object.assign({url:'',room:'',mode:'off'}, JSON.parse(r)); }catch(e){}
+}
+function saveSyncCfg(){ try{ localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(syncCfg)); }catch(e){} }
+function syncReady(){ return syncCfg.mode !== 'off' && !!syncCfg.url && !!syncCfg.room; }
+function isViewer(){ return syncReady() && syncCfg.mode === 'viewer'; }
+function isHost(){ return syncReady() && syncCfg.mode === 'host'; }
+function syncBase(){ return syncCfg.url.replace(/\/+$/,'') + '/apl_rooms/' + encodeURIComponent(syncCfg.room); }
+
+function scheduleCloudPush(){
+  if(!isHost()) return;
+  clearTimeout(syncPushTimer);
+  syncPushTimer = setTimeout(cloudPush, 250);
+}
+async function cloudPush(){
+  if(!isHost()) return;
+  try{
+    const rev = Date.now();
+    const res = await fetch(syncBase() + '.json', {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ rev, state: buildPayload() })
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    setSyncLabel('☁ shared ' + new Date().toLocaleTimeString());
+  }catch(e){
+    console.error('Cloud sync failed:', e);
+    setSyncLabel('⚠ cloud sync failed');
+  }
+}
+async function viewerPoll(){
+  if(!isViewer() || syncPolling) return;
+  syncPolling = true;
+  try{
+    const r1 = await fetch(syncBase() + '/rev.json', { cache:'no-store' });
+    if(!r1.ok) throw new Error('HTTP ' + r1.status);
+    const rev = await r1.json();
+    if(rev === null){
+      setSyncLabel('⏳ waiting for host to start');
+    } else if(rev !== syncLastRev){
+      const r2 = await fetch(syncBase() + '/state.json', { cache:'no-store' });
+      if(!r2.ok) throw new Error('HTTP ' + r2.status);
+      const data = await r2.json();
+      if(data){ applyData(data); renderAll(); syncLastRev = rev; }
+      setSyncLabel('● live ' + new Date().toLocaleTimeString());
+    } else {
+      setSyncLabel('● live ' + new Date().toLocaleTimeString());
+    }
+  }catch(e){
+    console.error('Viewer sync failed:', e);
+    setSyncLabel('⚠ offline — retrying');
+  }
+  syncPolling = false;
+}
+function applySyncMode(){
+  clearInterval(syncPollTimer); syncPollTimer = null;
+  document.body.classList.toggle('viewer-mode', isViewer());
+  if(isViewer()){
+    document.body.classList.add('board-mode');
+    document.body.classList.remove('nav-peek');
+    ['board','auctioneer','players','stats','soldorder','setup','data'].forEach(id => {
+      document.getElementById('tab-'+id).classList.toggle('hidden', id !== 'board');
+    });
+    syncLastRev = null;
+    viewerPoll();
+    syncPollTimer = setInterval(viewerPoll, 1000);
+  }
+}
 
 // ---------- Derived data ----------
 function soldMap(){
@@ -1091,7 +1222,21 @@ function renderSoldOrder(){
   }).join('');
 }
 
+function renderSyncStatus(){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  const m = document.getElementById('syncModeSelect');
+  if(document.activeElement !== m) m.value = syncCfg.mode;
+  const r = document.getElementById('syncRoomInput'), u = document.getElementById('syncUrlInput');
+  if(document.activeElement !== r) r.value = syncCfg.room;
+  if(document.activeElement !== u) u.value = syncCfg.url;
+  if(isHost()){ el.style.color = 'var(--green)'; el.textContent = '● Host: publishing to room "' + syncCfg.room + '"'; }
+  else if(isViewer()){ el.style.color = 'var(--green)'; el.textContent = '● Viewer: following room "' + syncCfg.room + '"'; }
+  else { el.style.color = 'var(--grey)'; el.textContent = 'Sync is off — this device works on its own.'; }
+}
+
 function renderSetup(){
+  renderSyncStatus();
   const grid = document.getElementById('setupGrid');
   const catOptions = (selected) => [''].concat(getAllCategories())
     .map(c => `<option value="${c}" ${c === (selected||'') ? 'selected' : ''}>${c || 'No category'}</option>`).join('');
@@ -1449,7 +1594,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 // ---------- Live Board: hide tab bar, ☰ button / Esc toggles it ----------
 document.body.classList.add('board-mode');
-function toggleNavPeek(){ if(document.body.classList.contains('board-mode')) document.body.classList.toggle('nav-peek'); }
+function toggleNavPeek(){ if(isViewer()) return; if(document.body.classList.contains('board-mode')) document.body.classList.toggle('nav-peek'); }
 document.getElementById('menuFab').addEventListener('click', toggleNavPeek);
 document.addEventListener('keydown', (e) => {
   if(e.key === 'Escape' && !e.target.closest('input, select, textarea')) toggleNavPeek();
@@ -1747,8 +1892,38 @@ document.getElementById('saveCatSettingsBtn').addEventListener('click', () => {
   });
   if(bad){ showToast(`Check the values for ${bad}`); return; }
   categorySettings = next;
+  if(currentLot){
+    const b = getCatSetting(currentLot.category).base;
+    if(Number(currentLot.bid ?? 0) < b) currentLot.bid = b;
+  }
   persistAndRender();
   showToast('Category settings saved');
+});
+
+function cleanDbUrl(v){ return String(v||'').trim().replace(/\/+$/,''); }
+document.getElementById('syncSaveBtn').addEventListener('click', async () => {
+  const mode = document.getElementById('syncModeSelect').value;
+  const url = cleanDbUrl(document.getElementById('syncUrlInput').value);
+  const room = document.getElementById('syncRoomInput').value.trim().replace(/[^A-Za-z0-9_-]/g,'');
+  if(mode !== 'off'){
+    if(!/^https:\/\//i.test(url)){ showToast('Enter the Firebase database URL (starts with https://)'); return; }
+    if(!room){ showToast('Enter a room code (letters / numbers)'); return; }
+  }
+  if(mode === 'viewer' && !confirm('Viewer mode hides the controls on this device and shows only the live board. Continue?')) return;
+  syncCfg = { url, room, mode };
+  saveSyncCfg();
+  applySyncMode();
+  if(mode === 'host'){ await cloudPush(); }
+  renderAll();
+  showToast(mode === 'off' ? 'Live Sync turned off' : (mode === 'host' ? 'Hosting live board ☁' : 'Viewer mode on'));
+});
+document.getElementById('syncCopyLinkBtn').addEventListener('click', async () => {
+  const url = cleanDbUrl(document.getElementById('syncUrlInput').value || syncCfg.url);
+  const room = (document.getElementById('syncRoomInput').value || syncCfg.room).trim().replace(/[^A-Za-z0-9_-]/g,'');
+  if(!url || !room){ showToast('Fill in the database URL and room code first'); return; }
+  const link = location.origin + location.pathname + '?view=1&db=' + encodeURIComponent(url) + '&room=' + encodeURIComponent(room);
+  try{ await navigator.clipboard.writeText(link); showToast('Viewer link copied — open it on the phone'); }
+  catch(e){ prompt('Copy this viewer link:', link); }
 });
 
 document.getElementById('saveTournamentNameBtn').addEventListener('click', () => {
@@ -2067,7 +2242,20 @@ document.getElementById('soldImportFile').addEventListener('change', async (e) =
 });
 
 // ---------- Startup ----------
+loadSyncCfg();
+(function handleSyncLinkParams(){
+  try{
+    const q = new URLSearchParams(location.search);
+    if(q.get('sync') === 'off'){
+      syncCfg = { url: syncCfg.url, room: syncCfg.room, mode: 'off' }; saveSyncCfg();
+    } else if(q.get('view') === '1' && q.get('db') && q.get('room')){
+      syncCfg = { url: cleanDbUrl(q.get('db')), room: q.get('room').replace(/[^A-Za-z0-9_-]/g,''), mode: 'viewer' }; saveSyncCfg();
+    } else return;
+    history.replaceState(null, '', location.pathname);
+  }catch(e){}
+})();
 loadState();
+applySyncMode();
 window.addEventListener('beforeunload', () => {
   // Belt-and-braces: make sure the very latest state is on disk before the tab closes.
   writeStorage();
