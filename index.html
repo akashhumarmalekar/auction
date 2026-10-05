@@ -343,8 +343,15 @@
         <div id="purseWarning"></div>
         <div id="squadWarning"></div>
         <button class="btn btn-success" id="confirmSaleBtn" style="margin-top:14px;width:100%;" disabled>✅ Confirm Sale</button>
+        <button class="btn btn-danger" id="unsoldBtn" style="margin-top:8px;width:100%;" disabled>🚫 Mark Unsold &amp; draw next</button>
         <button class="btn btn-outline" id="clearLotBtn" style="margin-top:8px;width:100%;">Clear selection</button>
       </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3 style="margin:0 0 4px;color:var(--navy)">Unsold Players</h3>
+      <p style="font-size:.8rem;color:var(--grey);margin:0 0 8px;">Passed in without a sale. They are re-offered automatically once the other players in their category are done, or you can bring one back right now.</p>
+      <div id="unsoldList"></div>
     </div>
 
     <div class="card" style="margin-top:16px;">
@@ -622,6 +629,8 @@ let maxPlayersPerTeam = DEFAULT_MAX_PLAYERS;
 let selectedPlayerForSale = null;
 let categorySettings = {}; // {catKey: {base, inc, max}}  (max = null → no limit)
 let tournamentName = 'Anand Premier League 2026';
+let unsoldPlayers = [];   // [{name, ts}] players passed in at least once without a bid
+let lastResult = null;    // {type:'sold'|'unsold', name, team?, price?} — shown under the live banner
 let auctionCategory = '';  // category currently being auctioned
 const DEFAULT_BASE_PRICE = 500;
 const DEFAULT_BID_INCREMENT = 100;
@@ -650,7 +659,7 @@ function readStorage(){
 }
 
 function buildPayload(){
-  return { soldPlayers, currentLot, teamMeta, pursePerTeam, maxPlayersPerTeam, TEAM_NAMES, MASTER_PLAYERS, categorySettings, auctionCategory, tournamentName };
+  return { soldPlayers, currentLot, teamMeta, pursePerTeam, maxPlayersPerTeam, TEAM_NAMES, MASTER_PLAYERS, categorySettings, auctionCategory, tournamentName, unsoldPlayers, lastResult };
 }
 
 function writeStorage(){
@@ -694,6 +703,8 @@ function applyData(data){
     categorySettings = data.categorySettings || {};
     auctionCategory = data.auctionCategory || '';
     tournamentName = data.tournamentName || 'Anand Premier League 2026';
+    unsoldPlayers = data.unsoldPlayers || [];
+    lastResult = data.lastResult || null;
     selectedPlayerForSale = currentLot ? (MASTER_PLAYERS.find(p => p.name === currentLot.name) || null) : null;
   }
 }
@@ -865,17 +876,26 @@ function maxPreDecided(){
 function availableInCategory(cat){
   return availablePlayers().filter(p => catKey(p.category) === catKey(cat));
 }
+function isUnsold(name){ return unsoldPlayers.some(u => u.name === name) && !soldMap()[name]; }
 function startLot(p){
+  unsoldPlayers = unsoldPlayers.filter(u => u.name !== p.name);   // back on the block
   selectedPlayerForSale = p;
   currentLot = { name: p.name, category: p.category, bid: getCatSetting(p.category).base };
 }
 // Picks a random available player from the chosen category and puts them on the Live Board.
-function drawRandomPlayer(){
+// Players not yet passed in come first; once only unsold players remain they are re-offered.
+function drawRandomPlayer(excludeName){
   if(!auctionCategory) return null;
   const pool = availableInCategory(auctionCategory);
   if(pool.length === 0){ selectedPlayerForSale = null; currentLot = null; return null; }
-  let candidates = pool;
-  if(selectedPlayerForSale && pool.length > 1) candidates = pool.filter(p => p.name !== selectedPlayerForSale.name);
+  const skip = excludeName || (selectedPlayerForSale && selectedPlayerForSale.name) || null;
+  const others = pool.filter(p => p.name !== skip);
+  const fresh = others.filter(p => !isUnsold(p.name));
+  let candidates = fresh.length ? fresh : others;
+  if(candidates.length === 0){
+    if(excludeName){ selectedPlayerForSale = null; currentLot = null; return null; }
+    candidates = pool;
+  }
   const p = candidates[Math.floor(Math.random() * candidates.length)];
   startLot(p);
   return p;
@@ -922,7 +942,7 @@ function renderAuctioneer(){
   document.getElementById('auctionCatPills').innerHTML = getAllCategories().map(c => {
     const n = availableInCategory(c).length;
     const on = auctionCategory && catKey(c) === catKey(auctionCategory);
-    return `<button class="cat-btn ${on ? 'active' : ''}" data-cat="${escapeHtml(c)}" style="--cc:${catColorVar(c)};" ${n === 0 ? 'disabled' : ''}>${escapeHtml(c)}<span class="n">${n} left</span></button>`;
+    return `<button class="cat-btn ${on ? 'active' : ''}" data-cat="${escapeHtml(c)}" style="--cc:${catColorVar(c)};" ${n === 0 ? 'disabled' : ''}>${escapeHtml(c)}<span class="n">${n} left</span>${availableInCategory(c).some(p => isUnsold(p.name)) ? `<span class="n">· ${availableInCategory(c).filter(p => isUnsold(p.name)).length} unsold</span>` : ''}</button>`;
   }).join('');
 
   const box = document.getElementById('selectedPlayerBox');
@@ -964,7 +984,15 @@ function renderAuctioneer(){
     bidBox.innerHTML = '';
   }
 
+  const ul = document.getElementById('unsoldList');
+  const unsoldNow = unsoldPlayers.map(u => MASTER_PLAYERS.find(p => p.name === u.name)).filter(p => p && !soldMap()[p.name]);
+  ul.innerHTML = unsoldNow.length === 0
+    ? '<div style="color:#aaa;font-size:.85rem;">No unsold players.</div>'
+    : unsoldNow.map(p => `<div class="log-item"><span>${escapeHtml(p.name)} <span style="color:${catColorVar(p.category)};font-weight:700;">(${escapeHtml(p.category)})</span></span>
+        <button class="btn btn-outline reauction-btn" data-name="${escapeHtml(p.name)}" style="padding:4px 12px;font-size:.75rem;">Auction now</button></div>`).join('');
+
   const drawBtn = document.getElementById('drawNextBtn');
+  document.getElementById('unsoldBtn').disabled = !selectedPlayerForSale;
   const poolSize = auctionCategory ? availableInCategory(auctionCategory).length : 0;
   drawBtn.disabled = !(poolSize > 1 || (poolSize === 1 && !selectedPlayerForSale));
 }
@@ -1007,11 +1035,19 @@ function updateQuotaSummary(){
   }
 }
 
+function lastResultHtml(){
+  if(!lastResult) return '';
+  const nm = escapeHtml(lastResult.name);
+  const txt = lastResult.type === 'unsold'
+    ? `<b style="color:#ff9aa8;">${nm} — UNSOLD</b>`
+    : `<b style="color:var(--gold-light);">${nm}</b> sold to <b>${escapeHtml(lastResult.team)}</b> for <b>₹${Number(lastResult.price).toLocaleString('en-IN')}</b>`;
+  return `<div style="width:100%;font-size:.85rem;opacity:.9;border-top:1px solid rgba(255,255,255,.15);padding-top:10px;">Previous: ${txt}</div>`;
+}
 function renderNowBidding(){
   const el = document.getElementById('nowBidding');
   if(!el) return;
   if(!currentLot){
-    el.innerHTML = `<div class="now-bid"><div><div class="nb-tag">🔨 AUCTION</div><div class="nb-name" style="font-size:clamp(1.4rem,3vw,2.2rem);opacity:.85;">Waiting for the next player…</div></div></div>`;
+    el.innerHTML = `<div class="now-bid"><div><div class="nb-tag">🔨 AUCTION</div><div class="nb-name" style="font-size:clamp(1.4rem,3vw,2.2rem);opacity:.85;">Waiting for the next player…</div></div>${lastResultHtml()}</div>`;
     return;
   }
   const st = getCatSetting(currentLot.category);
@@ -1028,6 +1064,7 @@ function renderNowBidding(){
         <div class="nb-amt">₹${bid.toLocaleString('en-IN')}</div>
         <div class="nb-sub">Base ₹${st.base.toLocaleString('en-IN')} · +₹${st.inc.toLocaleString('en-IN')} per bid</div>
       </div>
+      ${lastResultHtml()}
     </div>`;
 }
 
@@ -1129,7 +1166,7 @@ function renderPlayerTable(){
     const s = sm[p.name];
     switch(key){
       case 'category': return p.category.toLowerCase();
-      case 'status': return s ? 'sold' : 'available';
+      case 'status': return s ? 'sold' : (isUnsold(p.name) ? 'unsold' : 'available');
       case 'team': return s ? s.team.toLowerCase() : '';
       case 'price': return s ? Number(s.price) : -1;
       default: return p.name.toLowerCase();
@@ -1152,7 +1189,7 @@ function renderPlayerTable(){
     return `<tr>
       <td>${escapeHtml(p.name)}</td>
       <td class="${catClass(p.category)}">${escapeHtml(p.category)}</td>
-      <td class="${s?'status-sold':'status-avail'}">${s?'Sold':'Available'}</td>
+      <td class="${s?'status-sold':(isUnsold(p.name)?'':'status-avail')}" ${(!s && isUnsold(p.name)) ? 'style="color:#b45309;font-weight:700;"' : ''}>${s?'Sold':(isUnsold(p.name)?'Unsold':'Available')}</td>
       <td>${s ? escapeHtml(s.team) : '-'}</td>
       <td>${s ? '₹'+Number(s.price).toLocaleString('en-IN') : '-'}</td>
     </tr>`;
@@ -1661,6 +1698,31 @@ document.getElementById('auctionCatPills').addEventListener('click', (e) => {
   if(p) showToast(`${p.name} is up for bidding`);
 });
 
+document.getElementById('unsoldBtn').addEventListener('click', () => {
+  if(!selectedPlayerForSale) return;
+  const p = selectedPlayerForSale;
+  if(!unsoldPlayers.some(u => u.name === p.name)) unsoldPlayers.push({ name: p.name, ts: Date.now() });
+  lastResult = { type:'unsold', name: p.name };
+  selectedPlayerForSale = null;
+  currentLot = null;
+  document.getElementById('priceInput').value = '';
+  document.getElementById('teamSelect').value = '';
+  const next = drawRandomPlayer(p.name);
+  persistAndRender();
+  showToast(next ? `${p.name} unsold — next up: ${next.name}` : `${p.name} marked unsold — no other ${auctionCategory} players left`);
+});
+document.getElementById('unsoldList').addEventListener('click', (e) => {
+  const b = e.target.closest('.reauction-btn');
+  if(!b) return;
+  const p = MASTER_PLAYERS.find(pp => pp.name === b.dataset.name);
+  if(!p || soldMap()[p.name]) return;
+  auctionCategory = p.category;
+  startLot(p);
+  document.getElementById('teamSelect').value = '';
+  persistAndRender();
+  showToast(`${p.name} is back up for bidding`);
+});
+
 document.getElementById('drawNextBtn').addEventListener('click', () => {
   const p = drawRandomPlayer();
   document.getElementById('teamSelect').value = '';
@@ -1739,6 +1801,8 @@ document.getElementById('confirmSaleBtn').addEventListener('click', () => {
     team, price, ts: Date.now(), preDecided: false
   });
   const soldName = selectedPlayerForSale.name;
+  lastResult = { type:'sold', name: soldName, team, price };
+  unsoldPlayers = unsoldPlayers.filter(u => u.name !== soldName);
   currentLot = null;
   selectedPlayerForSale = null;
   document.getElementById('priceInput').value = '';
@@ -1768,6 +1832,8 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   soldPlayers = [];
   currentLot = null;
   selectedPlayerForSale = null;
+  unsoldPlayers = [];
+  lastResult = null;
   persistAndRender();
   showToast('Auction reset');
 });
